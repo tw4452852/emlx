@@ -2,7 +2,7 @@ defmodule EMLX.Backend do
   @behaviour Nx.Backend
 
   alias Nx.Tensor, as: T
-  alias EMLX.Backend, as: MB
+  alias EMLX.Backend, as: Backend
 
   defstruct [:ref, :shape, :type, :data]
 
@@ -14,8 +14,8 @@ defmodule EMLX.Backend do
   @doc """
   Converts from an Nx tensor to an MLX array.
   """
-  def from_nx(%T{data: %MB{ref: device_ref}}), do: device_ref
-  def from_nx(%T{} = tensor), do: Nx.backend_transfer(tensor, MB) |> from_nx()
+  def from_nx(%T{data: %Backend{ref: device_ref}}), do: device_ref
+  def from_nx(%T{} = tensor), do: Nx.backend_transfer(tensor, Backend) |> from_nx()
 
   @doc """
   Converts an MLX array back to an Nx tensor.
@@ -32,7 +32,7 @@ defmodule EMLX.Backend do
         ref
       end
 
-    %T{t | data: %MB{ref: check_shape_and_type!(array, shape, type)}}
+    %T{t | data: %Backend{ref: check_shape_and_type!(array, shape, type)}}
   end
 
   @impl true
@@ -82,7 +82,7 @@ defmodule EMLX.Backend do
 
   defp maybe_pad_binary(bin, _), do: bin
 
-  defp maybe_add_signature(result, %T{data: %MB{ref: _}}) do
+  defp maybe_add_signature(result, %T{data: %Backend{ref: _}}) do
     Inspect.Algebra.concat([
       "EMLX.Backend",
       Inspect.Algebra.line(),
@@ -148,7 +148,7 @@ defmodule EMLX.Backend do
         backend_options
       )
       when scalar in [:infinity, :neg_infinity, :nan] do
-    t = apply(Nx.Constants, scalar, [type, [backend: {MB, backend_options}]])
+    t = apply(Nx.Constants, scalar, [type, [backend: {Backend, backend_options}]])
     Nx.broadcast(t, shape, names: names)
   end
 
@@ -169,7 +169,7 @@ defmodule EMLX.Backend do
   # end
 
   @impl true
-  def sum(%T{data: %MB{ref: ref}} = out, %T{} = t, opts) do
+  def sum(%T{data: %Backend{ref: ref}} = out, %T{} = t, opts) do
     axes = opts[:axes] || []
     keep_axes = opts[:keep_axes] || false
 

@@ -56,6 +56,15 @@ inline const std::string *dtype2string(const mlx::core::Dtype dtype) {
     return nullptr;
 }
 
+inline const mlx::core::Device string2device(const std::string &atom) {
+    if (atom == "cpu") {
+        return mlx::core::Device(mlx::core::Device::DeviceType::cpu, 0);
+    } else if (atom == "gpu") {
+        return mlx::core::Device(mlx::core::Device::DeviceType::gpu, 0);
+    }
+    throw std::runtime_error("Unknown device: " + atom);
+}
+
 // Class to manage the refcount of MLX arrays
 class ArrayP {
  public:
@@ -190,130 +199,6 @@ NIF(scalar_type) {
     return nx::nif::error(env, "Could not determine array type.");
 }
 
-NIF(make_zeros) {
-    if (argc != 1) {
-        return enif_make_badarg(env);
-    }
-
-    unsigned int length;
-    if (!enif_get_list_length(env, argv[0], &length)) {
-        return enif_make_badarg(env);
-    }
-
-    std::vector<int> shape;
-    ERL_NIF_TERM head, tail = argv[0];
-    
-    for (unsigned int i = 0; i < length; i++) {
-        int dim;
-        if (!enif_get_list_cell(env, tail, &head, &tail) ||
-            !enif_get_int(env, head, &dim)) {
-            return enif_make_badarg(env);
-        }
-        shape.push_back(dim);
-    }
-
-    try {
-        // Create MLX array filled with zeros
-        mlx::core::array result = mlx::core::zeros(shape, mlx::core::float32);
-        
-        // Allocate resource for the array
-        void* resource = enif_alloc_resource(ARRAY_TYPE, 
-            sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
-        
-        if (!resource) {
-            return enif_make_tuple2(env, 
-                enif_make_atom(env, "error"),
-                enif_make_atom(env, "resource_allocation_failed"));
-        }
-
-        // Copy the array into the resource
-        new (resource) mlx::core::array(std::move(result));
-        
-        // Initialize refcount and deleted flag
-        std::atomic<int>* refcount = (std::atomic<int>*)(((mlx::core::array*)resource) + 1);
-        std::atomic_flag* deleted = (std::atomic_flag*)(refcount + 1);
-        new (refcount) std::atomic<int>(1);
-        deleted->clear();
-
-        // Create Erlang term
-        ERL_NIF_TERM term = enif_make_resource(env, resource);
-        enif_release_resource(resource);
-
-        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-
-    } catch (const std::exception& e) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_string(env, e.what(), ERL_NIF_LATIN1));
-    } catch (...) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_atom(env, "unknown_error"));
-    }
-}
-
-NIF(make_ones) {
-    if (argc != 1) {
-        return enif_make_badarg(env);
-    }
-
-    unsigned int length;
-    if (!enif_get_list_length(env, argv[0], &length)) {
-        return enif_make_badarg(env);
-    }
-
-    std::vector<int> shape;
-    ERL_NIF_TERM head, tail = argv[0];
-    
-    for (unsigned int i = 0; i < length; i++) {
-        int dim;
-        if (!enif_get_list_cell(env, tail, &head, &tail) ||
-            !enif_get_int(env, head, &dim)) {
-            return enif_make_badarg(env);
-        }
-        shape.push_back(dim);
-    }
-
-    try {
-        // Create MLX array filled with ones
-        mlx::core::array result = mlx::core::ones(shape, mlx::core::float32);
-        
-        // Allocate resource for the array
-        void* resource = enif_alloc_resource(ARRAY_TYPE, 
-            sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
-        
-        if (!resource) {
-            return enif_make_tuple2(env, 
-                enif_make_atom(env, "error"),
-                enif_make_atom(env, "resource_allocation_failed"));
-        }
-
-        // Copy the array into the resource
-        new (resource) mlx::core::array(std::move(result));
-        
-        // Initialize refcount and deleted flag
-        std::atomic<int>* refcount = (std::atomic<int>*)(((mlx::core::array*)resource) + 1);
-        std::atomic_flag* deleted = (std::atomic_flag*)(refcount + 1);
-        new (refcount) std::atomic<int>(1);
-        deleted->clear();
-
-        // Create Erlang term
-        ERL_NIF_TERM term = enif_make_resource(env, resource);
-        enif_release_resource(resource);
-
-        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-
-    } catch (const std::exception& e) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_string(env, e.what(), ERL_NIF_LATIN1));
-    } catch (...) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_atom(env, "unknown_error"));
-    }
-}
-
 NIF(sum) {
     ARRAY_PARAM(0, t);  
     LIST_PARAM(1, std::vector<int>, axes);
@@ -434,15 +319,13 @@ NIF(from_blob) {
 }
 
 NIF(scalar_tensor) {
- SCALAR_PARAM(0, scalar);
+  SCALAR_PARAM(0, scalar);
   TYPE_PARAM(1, type);
 
   ARRAY(make_scalar_tensor(scalar, type));
 }
 
 static ErlNifFunc nif_funcs[] = {
-    {"zeros", 1, make_zeros},
-    {"ones", 1, make_ones},
     {"scalar_type", 1, scalar_type},
     {"sum", 3, sum},
     {"shape", 1, shape},

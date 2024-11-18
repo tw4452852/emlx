@@ -42,10 +42,8 @@ ErlNifResourceType *ARRAY_TYPE;
   mlx::core::Dtype VAR = string2dtype(VAR##_atom)
 
 #define DEVICE_PARAM(ARGN, VAR)                                                \
-  LIST_PARAM(ARGN, std::vector<int64_t>, VAR##_vec);                         \
-  if (VAR##_vec.size() != 2)                                                 \
-    return nx::nif::error(env, "Device parameter must be a list of 2 integers"); \
-  mlx::core::Device VAR(static_cast<mlx::core::Device::DeviceType>(VAR##_vec[0]), VAR##_vec[1])
+  ATOM_PARAM(ARGN, VAR##_atom)                                                \
+  mlx::core::Device VAR = string2device(VAR##_atom)
 
 #define SCALAR_PARAM(ARGN, VAR)                                               \
   double VAR;                                                                 \

@@ -46,20 +46,7 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  @doc """
-  Computes the sum of array elements over specified axes.
-
-  ## Parameters
-    - array: An MLX array
-    - axes: A list of axes to sum over
-    - keep_dims: Boolean indicating whether to keep the reduced dimensions (default: false)
-
-  ## Examples
-      iex> {:ok, array} = Emlx.ones([2, 3])
-      iex> {:ok, sum_result} = Emlx.sum(array, [1], 1)  # Keep dims
-      iex> {:ok, sum_result} = Emlx.sum(array, [1], 0)  # Don't keep dims
-  """
-  def sum(_array, _axes, _keep_dims \\ 0) do
+  def sum(_array, _axes, _keep_dims) do
     :erlang.nif_error(:nif_not_loaded)
   end
 
