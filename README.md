@@ -2,6 +2,18 @@
 
 **TODO: Add description**
 
+## Current setup(probably needs to be improved)
+
+MLX source is placed in `c_src/mlx`
+
+```
+cmake -B c_src/mlx/build -DCMAKE_INSTALL_PREFIX=$HOME/.local -DBUILD_SHARED_LIBS=ON
+make -j8 -C c_src/mlx/build
+make -C c_src/mlx/build install
+```
+
+libemlx.so built to `cache/`
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
