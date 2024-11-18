@@ -1,54 +1,20 @@
-defmodule Emlx do
-  @moduledoc """
-  Elixir bindings for MLX array operations.
-  """
+defmodule EMLX do
+  alias EMLX.NIF, as: NIF
 
-  @doc """
-  Creates an array filled with zeros.
+  defguard is_tensor(ref) when is_reference(ref)
 
-  ## Parameters
-    - shape: A list of integers specifying the dimensions of the array
+  ## Non-dirty non-tensor return values
 
-  ## Examples
-      iex> Emlx.zeros([2, 3])
-      # Returns a 2x3 array filled with zeros
-  """
-  def zeros(_shape) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
+  def scalar_type(ref) when is_tensor(ref), do: NIF.scalar_type(ref) |> unwrap!()
+  def shape(ref) when is_tensor(ref), do: NIF.shape(ref) |> unwrap!()
+  def to_blob(ref, limit) when is_tensor(ref), do: NIF.to_blob(ref, limit) |> unwrap!()
 
-  @doc """
-  Creates an array filled with ones.
+  # TODO: Use macros like Torchx
+  def to_type(ref, type) when is_tensor(ref), do: NIF.to_type(ref, type) |> unwrap!()
+  def ones(shape), do: NIF.ones(shape) |> unwrap!()
+  def zeros(shape), do: NIF.zeros(shape) |> unwrap!()
 
-  ## Parameters
-    - shape: A list of integers specifying the dimensions of the array
-
-  ## Examples
-      iex> Emlx.ones([2, 3])
-      # Returns a 2x3 array filled with ones
-  """
-  def ones(_shape) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
-
-  @doc """
-  Gets the data type of an array.
-
-  ## Parameters
-    - array: An MLX array
-
-  ## Examples
-      iex> array = Emlx.zeros([2, 3])
-      iex> Emlx.scalar_type(array)
-      # Returns the data type (e.g., :float32)
-  """
-  def scalar_type(_array) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
-
-  @on_load :load_nifs
-  def load_nifs do
-    path = :filename.join(:code.priv_dir(:emlx), ~c"libemlx")
-    :erlang.load_nif(path, 0)
-  end
+  defp unwrap!(:ok), do: :ok
+  defp unwrap!({:ok, result}), do: result
+  defp unwrap!({:error, error}), do: raise("EMLX: " <> List.to_string(error))
 end
