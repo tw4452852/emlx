@@ -1,25 +1,39 @@
 defmodule Emlx do
   @moduledoc """
-  Documentation for `Emlx`.
+  Elixir bindings for MLX array operations.
   """
 
   @doc """
-  Hello world.
+  Creates an array filled with zeros.
+
+  ## Parameters
+    - shape: A list of integers specifying the dimensions of the array
 
   ## Examples
-
-      iex> Emlx.hello()
-      :world
-
+      iex> Emlx.zeros([2, 3])
+      # Returns a 2x3 array filled with zeros
   """
-  def hello do
-    :nif_not_loaded
+  def zeros(_shape) do
+    :erlang.nif_error(:nif_not_loaded)
   end
 
-  @on_load :on_load
-  def on_load do
-    # path = Path.join(System.get_env("HOME"), ".local/lib/libmlx")
-    path = "/Users/samrat/code/emlx/cache/libemlx"
-    :ok = :erlang.load_nif(path, 0)
+  @doc """
+  Creates an array filled with ones.
+
+  ## Parameters
+    - shape: A list of integers specifying the dimensions of the array
+
+  ## Examples
+      iex> Emlx.ones([2, 3])
+      # Returns a 2x3 array filled with ones
+  """
+  def ones(_shape) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  @on_load :load_nifs
+  def load_nifs do
+    path = :filename.join(:code.priv_dir(:emlx), ~c"libemlx")
+    :erlang.load_nif(path, 0)
   end
 end

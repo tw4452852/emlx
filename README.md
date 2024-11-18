@@ -4,12 +4,12 @@
 
 ## Current setup(probably needs to be improved)
 
-MLX source is placed in `c_src/mlx`
+MLX source is placed in `priv/mlx-src`
 
 ```
-cmake -B c_src/mlx/build -DCMAKE_INSTALL_PREFIX=$HOME/.local -DBUILD_SHARED_LIBS=ON
-make -j8 -C c_src/mlx/build
-make -C c_src/mlx/build install
+cmake -B priv/mlx-src/build -DCMAKE_INSTALL_PREFIX=$HOME/.local -DBUILD_SHARED_LIBS=ON
+make -j8 -C priv/mlx-src/build
+make -C priv/mlx-src/build install
 ```
 
 libemlx.so built to `cache/`
