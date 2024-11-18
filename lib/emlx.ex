@@ -31,6 +31,21 @@ defmodule Emlx do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  @doc """
+  Gets the data type of an array.
+
+  ## Parameters
+    - array: An MLX array
+
+  ## Examples
+      iex> array = Emlx.zeros([2, 3])
+      iex> Emlx.scalar_type(array)
+      # Returns the data type (e.g., :float32)
+  """
+  def scalar_type(_array) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   @on_load :load_nifs
   def load_nifs do
     path = :filename.join(:code.priv_dir(:emlx), ~c"libemlx")
