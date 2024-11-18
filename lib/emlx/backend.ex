@@ -57,7 +57,7 @@ defmodule EMLX.Backend do
   end
 
   @impl true
-  def from_binary(%T{type: type, shape: shape} = out, binary, backend_options) do
+  def from_binary(%T{type: type, shape: shape} = out, binary, _backend_options) do
     binary
     |> maybe_pad_binary(type)
     |> EMLX.from_blob(
@@ -118,12 +118,31 @@ defmodule EMLX.Backend do
       """
     end
 
-    if actual_type != expected_type do
-      raise ArgumentError, """
-      Type mismatch in MLX array conversion:
-      Expected type: #{inspect(expected_type)}
-      Got type: #{inspect(actual_type)}
-      """
+    case {actual_type, expected_type} do
+      {{:s, 8}, {:s, qint}} when qint in [2, 4] ->
+        :ok
+
+      {{:u, 8}, {:u, qint}} when qint in [2, 4] ->
+        :ok
+
+      {{:s, 32}, {:u, 16}} ->
+        :ok
+
+      {{:s, 64}, {:u, 32}} ->
+        :ok
+
+      {{:s, 64}, {:u, 64}} ->
+        :ok
+
+      {{:u, 8}, {:u, 32}} ->
+        :ok
+
+      _ when actual_type != expected_type ->
+        raise "type mismatch in EMLX: expected #{inspect(expected_type)}, got: #{inspect(actual_type)}. " <>
+                "Please report this bug"
+
+      _ ->
+        :ok
     end
 
     array
@@ -169,11 +188,22 @@ defmodule EMLX.Backend do
   # end
 
   @impl true
-  def sum(%T{data: %Backend{ref: ref}} = out, %T{} = t, opts) do
+  def sum(%T{} = out, %T{} = t, opts) do
     axes = opts[:axes] || []
     keep_axes = opts[:keep_axes] || false
 
-    EMLX.sum(ref, axes, keep_axes) |> to_nx(out)
+    # Calculate the expected output shape based on the input shape and axes
+    result =
+      t
+      |> from_nx()
+      |> EMLX.sum(axes, keep_axes)
+
+    # Get the actual shape after summation
+    actual_shape = EMLX.shape(result)
+
+    # Create a new output tensor with the correct shape
+    %{out | shape: actual_shape}
+    |> then(&to_nx(result, &1))
   end
 
   # Helper function to handle different scalar types

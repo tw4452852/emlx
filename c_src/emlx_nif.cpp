@@ -308,9 +308,7 @@ NIF(from_blob) {
 
   try {
     // Create MLX array directly from the binary data
-    mlx::core::array array(blob.data, shape, type);
-
-    ARRAY(array);
+    ARRAY(mlx::core::array(blob.data, shape, type));
   } catch (const std::exception& e) {
     return nx::nif::error(env, e.what());
   } catch (...) {
