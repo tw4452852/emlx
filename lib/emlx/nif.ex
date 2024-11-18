@@ -3,45 +3,14 @@ defmodule EMLX.NIF do
   Elixir bindings for MLX array operations.
   """
 
-  @doc """
-  Creates an array filled with zeros.
-
-  ## Parameters
-    - shape: A list of integers specifying the dimensions of the array
-
-  ## Examples
-      iex> Emlx.zeros([2, 3])
-      # Returns a 2x3 array filled with zeros
-  """
-  def zeros(_shape) do
+  def zeros(_shape, _type, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  @doc """
-  Creates an array filled with ones.
-
-  ## Parameters
-    - shape: A list of integers specifying the dimensions of the array
-
-  ## Examples
-      iex> Emlx.ones([2, 3])
-      # Returns a 2x3 array filled with ones
-  """
-  def ones(_shape) do
+  def ones(_shape, _type, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  @doc """
-  Gets the data type of an array.
-
-  ## Parameters
-    - array: An MLX array
-
-  ## Examples
-      iex> array = Emlx.zeros([2, 3])
-      iex> Emlx.scalar_type(array)
-      # Returns the data type (e.g., :float32)
-  """
   def scalar_type(_array) do
     :erlang.nif_error(:nif_not_loaded)
   end
@@ -55,6 +24,10 @@ defmodule EMLX.NIF do
   end
 
   def to_type(_array, _type) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def to_blob(_array) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

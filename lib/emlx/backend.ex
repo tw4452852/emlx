@@ -20,16 +20,17 @@ defmodule EMLX.Backend do
   @doc """
   Converts an MLX array back to an Nx tensor.
   """
-  def to_nx(ref, %T{type: type, shape: shape} = t) when is_reference(ref) do
+  def to_nx({device, ref} = device_ref, %T{type: type, shape: shape} = t)
+      when is_atom(device) and is_reference(ref) do
     # Get the MLX array's type
-    mlx_type = EMLX.scalar_type(ref)
+    mlx_type = EMLX.scalar_type(device_ref)
 
     # Convert if needed (similar to the torch byte conversion)
     array =
       if needs_type_conversion?(type, mlx_type) do
-        EMLX.to_type(ref, nx_type_to_mlx(type))
+        EMLX.to_type(device_ref, nx_type_to_mlx(type))
       else
-        ref
+        device_ref
       end
 
     %T{t | data: %Backend{ref: check_shape_and_type!(array, shape, type)}}
@@ -48,39 +49,58 @@ defmodule EMLX.Backend do
   @impl true
   def to_binary(tensor, limit) do
     blob = EMLX.to_blob(from_nx(tensor), limit)
+    # IO.inspect(blob, label: "Raw blob from MLX")
+    # IO.inspect(byte_size(blob), label: "Blob size in bytes")
+    # IO.inspect(tensor.type, label: "Tensor type")
+    # IO.inspect(limit, label: "Requested limit")
 
-    case tensor.type do
-      {:u, 16} -> for <<x::32-native <- blob>>, do: <<x::16-native>>, into: <<>>
-      {:u, 32} -> for <<x::64-native <- blob>>, do: <<x::32-native>>, into: <<>>
-      _ -> blob
-    end
+    # result =
+    #   case tensor.type do
+    #     {:u, 32} ->
+    #       converted = for <<x::64-native <- blob>>, do: <<x::32-native>>, into: <<>>
+    #       IO.inspect(converted, label: "Converted u32 blob")
+    #       converted
+
+    #     {:u, 16} ->
+    #       converted = for <<x::32-native <- blob>>, do: <<x::16-native>>, into: <<>>
+    #       IO.inspect(converted, label: "Converted u16 blob")
+    #       converted
+
+    #     _ ->
+    #       IO.inspect(blob, label: "Unchanged blob")
+    #       blob
+    #   end
+
+    # IO.inspect(byte_size(result), label: "Final result size in bytes")
+    # result
   end
 
   @impl true
-  def from_binary(%T{type: type, shape: shape} = out, binary, _backend_options) do
+  def from_binary(%T{type: type, shape: shape} = out, binary, backend_options) do
     binary
-    |> maybe_pad_binary(type)
+    # |> maybe_pad_binary(type)
     |> EMLX.from_blob(
       shape,
-      nx_type_to_mlx(type)
+      nx_type_to_mlx(type),
+      device_option(backend_options)
     )
     |> to_nx(out)
   end
 
-  defp maybe_pad_binary(bin, {:u, size}) when size in [16, 32] do
-    double_size = size * 2
-    for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-size(double_size)>>
-  end
+  # defp maybe_pad_binary(bin, {:u, size}) when size in [16, 32] do
+  #   double_size = size * 2
+  #   for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-size(double_size)>>
+  # end
 
-  defp maybe_pad_binary(bin, {:u, size}) when size in [2, 4] do
-    for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-8>>
-  end
+  # defp maybe_pad_binary(bin, {:u, size}) when size in [2, 4] do
+  #   for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-8>>
+  # end
 
-  defp maybe_pad_binary(bin, {:s, size}) when size in [2, 4] do
-    for <<x::native-signed-size(size) <- bin>>, into: <<>>, do: <<x::native-signed-8>>
-  end
+  # defp maybe_pad_binary(bin, {:s, size}) when size in [2, 4] do
+  #   for <<x::native-signed-size(size) <- bin>>, into: <<>>, do: <<x::native-signed-8>>
+  # end
 
-  defp maybe_pad_binary(bin, _), do: bin
+  # defp maybe_pad_binary(bin, _), do: bin
 
   defp maybe_add_signature(result, %T{data: %Backend{ref: _}}) do
     Inspect.Algebra.concat([
@@ -106,9 +126,9 @@ defmodule EMLX.Backend do
   defp nx_type_to_mlx({:f, 32}), do: :float32
   defp nx_type_to_mlx(:bool), do: :bool
 
-  defp check_shape_and_type!(array, expected_shape, expected_type) do
-    actual_shape = EMLX.shape(array)
-    actual_type = EMLX.scalar_type(array) |> mlx_type_to_nx()
+  defp check_shape_and_type!(device_ref, expected_shape, expected_type) do
+    actual_shape = EMLX.shape(device_ref)
+    actual_type = EMLX.scalar_type(device_ref) |> mlx_type_to_nx()
 
     if actual_shape != expected_shape do
       raise ArgumentError, """
@@ -145,7 +165,7 @@ defmodule EMLX.Backend do
         :ok
     end
 
-    array
+    device_ref
   end
 
   defp mlx_type_to_nx(:uint8), do: {:u, 8}
@@ -172,10 +192,10 @@ defmodule EMLX.Backend do
   end
 
   @impl true
-  def constant(%T{shape: {}, type: type} = out, scalar, _backend_options) do
+  def constant(%T{shape: {}, type: type} = out, scalar, backend_options) do
     scalar
     |> constant_serialize_scalar()
-    |> EMLX.scalar_tensor(nx_type_to_mlx(type))
+    |> EMLX.scalar_tensor(nx_type_to_mlx(type), device_option(backend_options))
     |> to_nx(out)
   end
 

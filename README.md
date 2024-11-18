@@ -1,6 +1,17 @@
 # Emlx
 
-**TODO: Add description**
+**TODO**
+
+- [ ] from_blob isn't working properly. Returns wrong tensor
+
+  iex(1)> Nx.from_binary(<<1::32,2::32>>, :u32)
+
+#Nx.Tensor<
+  u32[2]
+  EMLX.Backend
+  [0, 0]
+>
+iex(2)>
 
 ## Current setup(probably needs to be improved)
 

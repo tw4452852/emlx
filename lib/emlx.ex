@@ -1,27 +1,56 @@
 defmodule EMLX do
   alias EMLX.NIF, as: NIF
 
-  # FIXME: Add back device
-  defguard is_tensor(ref) when is_reference(ref)
+  defguard is_tensor(device, ref) when is_reference(ref) and is_atom(device)
+
+  # defdevice(ones(shape, type, device))
+  # defdevice(zeros(shape, type, device))
+
+  def ones(shape, type, device), do: NIF.ones(shape, type, device) |> unwrap_tensor!(device)
+  def zeros(shape, type, device), do: NIF.zeros(shape, type, device) |> unwrap_tensor!(device)
 
   ## Non-dirty non-tensor return values
-  def scalar_type(ref) when is_tensor(ref), do: NIF.scalar_type(ref) |> unwrap!()
-  def shape(ref) when is_tensor(ref), do: NIF.shape(ref) |> unwrap!()
-  def to_blob(ref, limit) when is_tensor(ref), do: NIF.to_blob(ref, limit) |> unwrap!()
-  def from_blob(shape, type, binary), do: NIF.from_blob(shape, type, binary) |> unwrap!()
+  def scalar_type({device, ref}) when is_tensor(device, ref),
+    do: NIF.scalar_type(ref) |> unwrap!()
 
-  # TODO: Use macros like Torchx
-  def to_type(ref, type) when is_tensor(ref), do: NIF.to_type(ref, type) |> unwrap!()
-  def ones(shape), do: NIF.ones(shape) |> unwrap!()
-  def zeros(shape), do: NIF.zeros(shape) |> unwrap!()
+  def shape({device, ref}) when is_tensor(device, ref),
+    do: NIF.shape(ref) |> unwrap!()
 
-  def scalar_tensor(value, type), do: NIF.scalar_tensor(value, type) |> unwrap!()
+  def to_blob({device, ref}) when is_tensor(device, ref),
+    do: NIF.to_blob(ref) |> unwrap!()
 
-  def sum(ref, axes, keep_dims) when is_tensor(ref) do
-    NIF.sum(ref, axes, keep_dims) |> unwrap!()
+  def to_type({device, ref}, type) when is_tensor(device, ref),
+    do: NIF.to_type(ref, type) |> unwrap!()
+
+  def to_blob({device, ref}, limit) when is_tensor(device, ref),
+    do: NIF.to_blob(ref, limit) |> unwrap!()
+
+  def from_blob(shape, type, binary, device),
+    do: NIF.from_blob(shape, type, binary) |> unwrap_tensor!(device)
+
+  def scalar_tensor(value, type, device),
+    do: NIF.scalar_tensor(value, type) |> unwrap_tensor!(device)
+
+  def sum({device, ref}, axes, keep_dims) when is_tensor(device, ref) do
+    NIF.sum(ref, axes, keep_dims) |> unwrap_tensor!(device)
   end
 
   defp unwrap!(:ok), do: :ok
   defp unwrap!({:ok, result}), do: result
   defp unwrap!({:error, error}), do: raise("EMLX: " <> List.to_string(error))
+
+  defp unwrap_tensor!(tagged_result, device) do
+    IO.inspect(tagged_result, label: "unwrap_tensor!")
+
+    case unwrap!(tagged_result) do
+      ref when is_reference(ref) ->
+        {device, ref}
+
+      list when is_list(list) ->
+        Enum.map(list, &{device, &1})
+
+      tuple when is_tuple(tuple) ->
+        tuple |> Tuple.to_list() |> Enum.map(&{device, &1}) |> List.to_tuple()
+    end
+  end
 end

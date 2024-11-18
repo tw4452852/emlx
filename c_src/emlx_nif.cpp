@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <numeric>
-
+#include <iostream>
 using namespace mlx::core;
 
 std::map<const std::string, const mlx::core::Dtype> dtypes = {
@@ -184,10 +184,6 @@ TYPE VAR;                                      \
 if (!nx::nif::get_list(env, argv[ARGN], VAR)) \
 return nx::nif::error(env, "Unable to get " #VAR " list param.");
 
-inline mlx::core::array make_scalar_tensor(double value, const mlx::core::Dtype& dtype) {
-    return mlx::core::array(value, dtype);
-}
-
 NIF(scalar_type) {
   ARRAY_PARAM(0, t);
 
@@ -215,6 +211,22 @@ NIF(shape) {
     sizes.push_back(nx::nif::make(env, static_cast<int64_t>(t->shape()[dim])));
 
   return nx::nif::ok(env, enif_make_tuple_from_array(env, sizes.data(), sizes.size()));
+}
+
+NIF(ones) {
+  SHAPE_PARAM(0, shape);
+  TYPE_PARAM(1, type);
+  DEVICE_PARAM(2, device);
+
+  ARRAY(mlx::core::ones(shape, type, device));
+}
+
+NIF(zeros) {
+  SHAPE_PARAM(0, shape);
+  TYPE_PARAM(1, type);
+  DEVICE_PARAM(2, device);
+
+  ARRAY(mlx::core::zeros(shape, type, device));
 }
 
 NIF(to_type) {
@@ -267,7 +279,6 @@ NIF(to_blob) {
     
     size_t byte_size = t->nbytes();
     int64_t limit = 0;
-
     bool has_received_limit = (argc == 2);
 
     if (has_received_limit) {
@@ -276,17 +287,13 @@ NIF(to_blob) {
       byte_size = limit * t->itemsize();
     }
 
-    ERL_NIF_TERM result;
-    void* result_data = (void*)enif_make_new_binary(env, byte_size, &result);
-
-    // Get raw pointer to data and copy
-    const void* src_data = t->data<void>();
-    if (src_data == nullptr) {
+    // Get raw pointer to data
+    const void* data_ptr = t->data<void>();
+    if (data_ptr == nullptr) {
       return nx::nif::error(env, "Failed to get array data");
     }
-    std::memcpy(result_data, src_data, byte_size);
-    
-    return nx::nif::ok(env, result);
+
+    return nx::nif::ok(env, enif_make_resource_binary(env, t, data_ptr, byte_size));
   } catch (const std::exception& e) {
     return nx::nif::error(env, e.what());
   } catch (...) {
@@ -308,6 +315,10 @@ NIF(from_blob) {
 
   try {
     // Create MLX array directly from the binary data
+    // std::cout << "blob.data: " << blob.data << std::endl;
+    for (int i = 0; i < blob.size; i++) {
+      std::cout << "blob.data[" << i << "]: " << blob.data[i] << std::endl;
+    }
     ARRAY(mlx::core::array(blob.data, shape, type));
   } catch (const std::exception& e) {
     return nx::nif::error(env, e.what());
@@ -320,18 +331,9 @@ NIF(scalar_tensor) {
   SCALAR_PARAM(0, scalar);
   TYPE_PARAM(1, type);
 
-  ARRAY(make_scalar_tensor(scalar, type));
+  ARRAY( mlx::core::array(scalar, type))
 }
 
-static ErlNifFunc nif_funcs[] = {
-    {"scalar_type", 1, scalar_type},
-    {"sum", 3, sum},
-    {"shape", 1, shape},
-    {"to_type", 2, to_type},
-    {"to_blob", 2, to_blob},
-    {"from_blob", 3, from_blob},
-    {"scalar_tensor", 2, scalar_tensor},
-};
 
 static void free_array(ErlNifEnv* env, void* obj) {
     mlx::core::array* arr = static_cast<mlx::core::array*>(obj);
@@ -358,6 +360,20 @@ static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
     }
     return 0;
 }
+
+static ErlNifFunc nif_funcs[] = {
+    {"scalar_type", 1, scalar_type},
+    {"sum", 3, sum},
+    {"shape", 1, shape},
+    {"to_type", 2, to_type},
+    {"to_blob", 1, to_blob},
+    {"to_blob", 2, to_blob},
+    {"from_blob", 3, from_blob},
+    {"scalar_tensor", 2, scalar_tensor},
+    {"ones", 3, ones},
+    {"zeros", 3, zeros},
+};
+
 
 // Update the NIF initialization
 ERL_NIF_INIT(Elixir.EMLX.NIF, nif_funcs, load, NULL, NULL, NULL)
