@@ -3,6 +3,7 @@
 #include "nx_nif_utils.hpp"
 #include <map>
 #include <string>
+#include <numeric>
 
 using namespace mlx::core;
 
@@ -118,6 +119,42 @@ class ArrayP {
   ERL_NIF_TERM err;
 };
 
+#define CATCH()                                                  \
+  catch (const std::exception& e) {                             \
+    std::ostringstream msg;                                     \
+    msg << e.what() << " in NIF." << __func__ << "/" << argc;  \
+    return nx::nif::error(env, msg.str().c_str());             \
+  }                                                             \
+  catch (...) {                                                 \
+    return nx::nif::error(env, "Unknown error occurred");       \
+  }
+
+#define ARRAY(A)                                            \
+  try {                                                      \
+    return nx::nif::ok(env, create_array_resource(env, A)); \
+  }                                                          \
+  CATCH()
+
+ERL_NIF_TERM
+create_array_resource(ErlNifEnv *env, mlx::core::array array) {
+  ERL_NIF_TERM ret;
+  mlx::core::array *arrayPtr;
+  std::atomic<int> *refcount;
+
+  arrayPtr = (mlx::core::array *)enif_alloc_resource(ARRAY_TYPE, sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
+  if (arrayPtr == NULL)
+    return enif_make_badarg(env);
+
+  new (arrayPtr) mlx::core::array(std::move(array));
+  refcount = new (arrayPtr + 1) std::atomic<int>(1);
+  new (refcount + 1) std::atomic_flag();
+
+  ret = enif_make_resource(env, arrayPtr);
+  enif_release_resource(arrayPtr);
+
+  return ret;
+}
+
 #define NIF(NAME) ERL_NIF_TERM NAME(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 #define PARAM(ARGN, TYPE, VAR) \
@@ -137,6 +174,10 @@ class ArrayP {
 TYPE VAR;                                      \
 if (!nx::nif::get_list(env, argv[ARGN], VAR)) \
 return nx::nif::error(env, "Unable to get " #VAR " list param.");
+
+inline mlx::core::array make_scalar_tensor(double value, const mlx::core::Dtype& dtype) {
+    return mlx::core::array(value, dtype);
+}
 
 NIF(scalar_type) {
   ARRAY_PARAM(0, t);
@@ -426,6 +467,84 @@ NIF(to_blob) {
   }
 }
 
+uint64_t elem_count(std::vector<int> shape) {
+  return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>{});
+}
+
+NIF(from_blob) {
+  BINARY_PARAM(0, blob);
+  SHAPE_PARAM(1, shape);
+  TYPE_PARAM(2, type);
+
+  if (blob.size / dtype_sizes[type_atom] < elem_count(shape))
+    return nx::nif::error(env, "Binary size is too small for the requested shape");
+
+  try {
+    // Create MLX array directly from the binary data
+    mlx::core::array array(blob.data, shape, type);
+
+    ARRAY(array);
+  } catch (const std::exception& e) {
+    return nx::nif::error(env, e.what());
+  } catch (...) {
+    return nx::nif::error(env, "Unknown error creating array from binary data");
+  }
+}
+
+
+NIF(scalar_tensor) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    // Get scalar value
+    double value;
+    if (!enif_get_double(env, argv[0], &value)) {
+        return enif_make_badarg(env);
+    }
+
+    // Get type
+    char type_str[32];
+    if (!enif_get_atom(env, argv[1], type_str, sizeof(type_str), ERL_NIF_LATIN1)) {
+        return enif_make_badarg(env);
+    }
+
+    try {
+        mlx::core::Dtype dtype = string2dtype(type_str);
+        mlx::core::array result = make_scalar_tensor(value, dtype);
+        
+        // Allocate resource for the array
+        void* resource = enif_alloc_resource(ARRAY_TYPE, 
+            sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
+        
+        if (!resource) {
+            return enif_make_tuple2(env, 
+                enif_make_atom(env, "error"),
+                enif_make_atom(env, "resource_allocation_failed"));
+        }
+
+        // Copy the array into the resource
+        new (resource) mlx::core::array(std::move(result));
+        
+        // Initialize refcount and deleted flag
+        std::atomic<int>* refcount = (std::atomic<int>*)(((mlx::core::array*)resource) + 1);
+        std::atomic_flag* deleted = (std::atomic_flag*)(refcount + 1);
+        new (refcount) std::atomic<int>(1);
+        deleted->clear();
+
+        // Create Erlang term
+        ERL_NIF_TERM term = enif_make_resource(env, resource);
+        enif_release_resource(resource);
+
+        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+
+    } catch (const std::exception& e) {
+        return enif_make_tuple2(env, 
+            enif_make_atom(env, "error"),
+            enif_make_string(env, e.what(), ERL_NIF_LATIN1));
+    }
+}
+
 static ErlNifFunc nif_funcs[] = {
     {"zeros", 1, make_zeros},
     {"ones", 1, make_ones},
@@ -433,7 +552,9 @@ static ErlNifFunc nif_funcs[] = {
     {"sum", 3, sum},
     {"shape", 1, shape},
     {"to_type", 2, to_type},
-    {"to_blob", 2, to_blob}
+    {"to_blob", 2, to_blob},
+    {"from_blob", 3, from_blob},
+    {"scalar_tensor", 2, scalar_tensor},
 };
 
 static void free_array(ErlNifEnv* env, void* obj) {

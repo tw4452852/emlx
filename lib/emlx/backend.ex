@@ -6,6 +6,11 @@ defmodule EMLX.Backend do
 
   defstruct [:ref, :shape, :type, :data]
 
+  @impl true
+  def init(opts) do
+    Keyword.validate!(opts, device: :cpu)
+  end
+
   @doc """
   Converts from an Nx tensor to an MLX array.
   """
@@ -50,6 +55,32 @@ defmodule EMLX.Backend do
       _ -> blob
     end
   end
+
+  @impl true
+  def from_binary(%T{type: type, shape: shape} = out, binary, backend_options) do
+    binary
+    |> maybe_pad_binary(type)
+    |> EMLX.from_blob(
+      shape,
+      nx_type_to_mlx(type)
+    )
+    |> to_nx(out)
+  end
+
+  defp maybe_pad_binary(bin, {:u, size}) when size in [16, 32] do
+    double_size = size * 2
+    for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-size(double_size)>>
+  end
+
+  defp maybe_pad_binary(bin, {:u, size}) when size in [2, 4] do
+    for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-8>>
+  end
+
+  defp maybe_pad_binary(bin, {:s, size}) when size in [2, 4] do
+    for <<x::native-signed-size(size) <- bin>>, into: <<>>, do: <<x::native-signed-8>>
+  end
+
+  defp maybe_pad_binary(bin, _), do: bin
 
   defp maybe_add_signature(result, %T{data: %MB{ref: _}}) do
     Inspect.Algebra.concat([
@@ -109,4 +140,38 @@ defmodule EMLX.Backend do
   defp mlx_type_to_nx(:float16), do: {:f, 16}
   defp mlx_type_to_nx(:float32), do: {:f, 32}
   defp mlx_type_to_nx(:bool), do: :bool
+
+  @impl true
+  def constant(
+        %T{shape: shape, names: names, type: type} = out,
+        scalar,
+        backend_options
+      )
+      when scalar in [:infinity, :neg_infinity, :nan] do
+    t = apply(Nx.Constants, scalar, [type, [backend: {MB, backend_options}]])
+    Nx.broadcast(t, shape, names: names)
+  end
+
+  @impl true
+  def constant(%T{shape: {}, type: type} = out, scalar, _backend_options) do
+    scalar
+    |> constant_serialize_scalar()
+    |> EMLX.scalar_tensor(nx_type_to_mlx(type))
+    |> to_nx(out)
+  end
+
+  # FIXME: Use `full` like torchx
+  # def constant(%T{shape: shape, type: type} = out, scalar, _backend_options) do
+  #   shape_list = Tuple.to_list(shape)
+
+  #   scalar
+  #   |> constant_serialize_scalar()
+  # end
+
+  # Helper function to handle different scalar types
+  defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
+  defp constant_serialize_scalar(%Complex{} = c), do: Complex.abs(c)
+
+  defp device_option(nil), do: :cpu
+  defp device_option(backend_opts), do: backend_opts[:device] || :cpu
 end

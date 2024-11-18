@@ -35,6 +35,18 @@ ErlNifResourceType *ARRAY_TYPE;
   if (!enif_inspect_binary(env, argv[ARGN], &VAR)) \
     return nx::nif::error(env, "Unable to get " #VAR " binary param.");
 
+#define SHAPE_PARAM(ARGN, VAR) TUPLE_PARAM(ARGN, std::vector<int>, VAR)
+
+#define TYPE_PARAM(ARGN, VAR)  \
+  ATOM_PARAM(ARGN, VAR##_atom) \
+  mlx::core::Dtype VAR = string2dtype(VAR##_atom)
+
+#define DEVICE_PARAM(ARGN, VAR)                                                \
+  LIST_PARAM(ARGN, std::vector<int64_t>, VAR##_vec);                         \
+  if (VAR##_vec.size() != 2)                                                 \
+    return nx::nif::error(env, "Device parameter must be a list of 2 integers"); \
+  mlx::core::Device VAR(static_cast<mlx::core::Device::DeviceType>(VAR##_vec[0]), VAR##_vec[1])
+
 namespace nx
 {
   namespace nif
