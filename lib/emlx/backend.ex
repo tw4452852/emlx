@@ -168,6 +168,14 @@ defmodule EMLX.Backend do
   #   |> constant_serialize_scalar()
   # end
 
+  @impl true
+  def sum(%T{data: %MB{ref: ref}} = out, %T{} = t, opts) do
+    axes = opts[:axes] || []
+    keep_axes = opts[:keep_axes] || false
+
+    EMLX.sum(ref, axes, keep_axes) |> to_nx(out)
+  end
+
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
   defp constant_serialize_scalar(%Complex{} = c), do: Complex.abs(c)

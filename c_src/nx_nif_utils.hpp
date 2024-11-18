@@ -47,6 +47,18 @@ ErlNifResourceType *ARRAY_TYPE;
     return nx::nif::error(env, "Device parameter must be a list of 2 integers"); \
   mlx::core::Device VAR(static_cast<mlx::core::Device::DeviceType>(VAR##_vec[0]), VAR##_vec[1])
 
+#define SCALAR_PARAM(ARGN, VAR)                                               \
+  double VAR;                                                                 \
+  std::vector<double> complex_##VAR;                                         \
+  if (nx::nif::get_tuple<double>(env, argv[ARGN], complex_##VAR)) {         \
+    return nx::nif::error(env, "Complex numbers are not supported in MLX");  \
+  } else if (enif_get_double(env, argv[ARGN], &VAR) == 0) {                 \
+    int64_t int64_##VAR;                                                     \
+    if (!enif_get_int64(env, argv[ARGN], (ErlNifSInt64 *)&int64_##VAR))    \
+      return nx::nif::error(env, "Unable to get scalar parameter");          \
+    VAR = static_cast<double>(int64_##VAR);                                 \
+  }
+
 namespace nx
 {
   namespace nif
@@ -271,7 +283,7 @@ namespace nx
       return 1;
     }
 
-    int get_list(ErlNifEnv *env, ERL_NIF_TERM list, std::vector<int64_t> &var)
+    int get_list(ErlNifEnv *env, ERL_NIF_TERM list, std::vector<int> &var)
     {
       unsigned int length;
       if (!enif_get_list_length(env, list, &length))

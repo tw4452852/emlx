@@ -316,68 +316,10 @@ NIF(make_ones) {
 
 NIF(sum) {
     ARRAY_PARAM(0, t);  
-    
-    // Get the axes vector
-    unsigned int length;
-    std::vector<int> axes;
-    if (!enif_get_list_length(env, argv[1], &length)) {
-        return enif_make_badarg(env);
-    }
-    
-    ERL_NIF_TERM head, tail = argv[1];
-    for (unsigned int i = 0; i < length; i++) {
-        int axis;
-        if (!enif_get_list_cell(env, tail, &head, &tail) ||
-            !enif_get_int(env, head, &axis)) {
-            return enif_make_badarg(env);
-        }
-        axes.push_back(axis);
-    }
+    LIST_PARAM(1, std::vector<int>, axes);
+    PARAM(2, bool, keep_dims);
 
-    // Get keepdims parameter
-    int keep_dims;
-    if (!enif_get_int(env, argv[2], &keep_dims)) {
-        return enif_make_badarg(env);
-    }
-
-    try {
-        // Create MLX array result
-        mlx::core::array result = mlx::core::sum(*t, axes, static_cast<bool>(keep_dims));
-        
-        // Allocate resource for the array
-        void* resource = enif_alloc_resource(ARRAY_TYPE, 
-            sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
-        
-        if (!resource) {
-            return enif_make_tuple2(env, 
-                enif_make_atom(env, "error"),
-                enif_make_atom(env, "resource_allocation_failed"));
-        }
-
-        // Copy the array into the resource
-        new (resource) mlx::core::array(std::move(result));
-        
-        // Initialize refcount and deleted flag
-        std::atomic<int>* refcount = (std::atomic<int>*)(((mlx::core::array*)resource) + 1);
-        std::atomic_flag* deleted = (std::atomic_flag*)(refcount + 1);
-        new (refcount) std::atomic<int>(1);
-        deleted->clear();
-
-        // Create Erlang term
-        ERL_NIF_TERM term = enif_make_resource(env, resource);
-        enif_release_resource(resource);
-
-        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-
-    } catch (const std::exception& e) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_string(env, e.what(), ERL_NIF_LATIN1));
-    } catch (...) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_atom(env, "unknown_error"));
-    }
+    ARRAY(mlx::core::sum(*t, axes, keep_dims));
 }
 
 NIF(shape) {
@@ -491,58 +433,11 @@ NIF(from_blob) {
   }
 }
 
-
 NIF(scalar_tensor) {
-    if (argc != 2) {
-        return enif_make_badarg(env);
-    }
+ SCALAR_PARAM(0, scalar);
+  TYPE_PARAM(1, type);
 
-    // Get scalar value
-    double value;
-    if (!enif_get_double(env, argv[0], &value)) {
-        return enif_make_badarg(env);
-    }
-
-    // Get type
-    char type_str[32];
-    if (!enif_get_atom(env, argv[1], type_str, sizeof(type_str), ERL_NIF_LATIN1)) {
-        return enif_make_badarg(env);
-    }
-
-    try {
-        mlx::core::Dtype dtype = string2dtype(type_str);
-        mlx::core::array result = make_scalar_tensor(value, dtype);
-        
-        // Allocate resource for the array
-        void* resource = enif_alloc_resource(ARRAY_TYPE, 
-            sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
-        
-        if (!resource) {
-            return enif_make_tuple2(env, 
-                enif_make_atom(env, "error"),
-                enif_make_atom(env, "resource_allocation_failed"));
-        }
-
-        // Copy the array into the resource
-        new (resource) mlx::core::array(std::move(result));
-        
-        // Initialize refcount and deleted flag
-        std::atomic<int>* refcount = (std::atomic<int>*)(((mlx::core::array*)resource) + 1);
-        std::atomic_flag* deleted = (std::atomic_flag*)(refcount + 1);
-        new (refcount) std::atomic<int>(1);
-        deleted->clear();
-
-        // Create Erlang term
-        ERL_NIF_TERM term = enif_make_resource(env, resource);
-        enif_release_resource(resource);
-
-        return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
-
-    } catch (const std::exception& e) {
-        return enif_make_tuple2(env, 
-            enif_make_atom(env, "error"),
-            enif_make_string(env, e.what(), ERL_NIF_LATIN1));
-    }
+  ARRAY(make_scalar_tensor(scalar, type));
 }
 
 static ErlNifFunc nif_funcs[] = {

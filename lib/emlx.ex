@@ -17,6 +17,12 @@ defmodule EMLX do
 
   def scalar_tensor(value, type), do: NIF.scalar_tensor(value, type) |> unwrap!()
 
+  def sum(ref, axes, keep_dims) when is_tensor(ref) do
+    IO.inspect(axes, label: "axes")
+    IO.inspect(keep_dims, label: "keep_dims")
+    NIF.sum(ref, axes, keep_dims) |> unwrap!()
+  end
+
   defp unwrap!(:ok), do: :ok
   defp unwrap!({:ok, result}), do: result
   defp unwrap!({:error, error}), do: raise("EMLX: " <> List.to_string(error))
