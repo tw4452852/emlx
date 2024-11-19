@@ -15,7 +15,7 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def sum(_array, _axes, _keep_dims) do
+  def sum(_array, _axes, _keep_dims, _result_type) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

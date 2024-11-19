@@ -31,8 +31,8 @@ defmodule EMLX do
   def scalar_tensor(value, type, device),
     do: NIF.scalar_tensor(value, type) |> unwrap_tensor!(device)
 
-  def sum({device, ref}, axes, keep_dims) when is_tensor(device, ref) do
-    NIF.sum(ref, axes, keep_dims) |> unwrap_tensor!(device)
+  def sum({device, ref}, axes, keep_dims, result_type) when is_tensor(device, ref) do
+    NIF.sum(ref, axes, keep_dims, result_type) |> unwrap_tensor!(device)
   end
 
   defp unwrap!(:ok), do: :ok

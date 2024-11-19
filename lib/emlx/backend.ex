@@ -14,8 +14,12 @@ defmodule EMLX.Backend do
   @doc """
   Converts from an Nx tensor to an MLX array.
   """
-  def from_nx(%T{data: %Backend{ref: device_ref}}), do: device_ref
-  def from_nx(%T{} = tensor), do: Nx.backend_transfer(tensor, Backend) |> from_nx()
+  def from_nx(%T{data: %Backend{ref: device_ref}}) do
+    device_ref
+  end
+
+  # FIXME: Do we need this case? In MLX, with unified memory, I think we will always have a device ref
+  # def from_nx(%T{} = tensor), do: Nx.backend_transfer(tensor, Backend) |> from_nx()
 
   @doc """
   Converts an MLX array back to an Nx tensor.
@@ -33,7 +37,10 @@ defmodule EMLX.Backend do
         device_ref
       end
 
-    %T{t | data: %Backend{ref: check_shape_and_type!(array, shape, type)}}
+    %T{
+      t
+      | data: %Backend{ref: check_shape_and_type!(array, shape, type), shape: shape, type: type}
+    }
   end
 
   @impl true
@@ -48,31 +55,7 @@ defmodule EMLX.Backend do
 
   @impl true
   def to_binary(tensor, limit) do
-    blob = EMLX.to_blob(from_nx(tensor), limit)
-    # IO.inspect(blob, label: "Raw blob from MLX")
-    # IO.inspect(byte_size(blob), label: "Blob size in bytes")
-    # IO.inspect(tensor.type, label: "Tensor type")
-    # IO.inspect(limit, label: "Requested limit")
-
-    # result =
-    #   case tensor.type do
-    #     {:u, 32} ->
-    #       converted = for <<x::64-native <- blob>>, do: <<x::32-native>>, into: <<>>
-    #       IO.inspect(converted, label: "Converted u32 blob")
-    #       converted
-
-    #     {:u, 16} ->
-    #       converted = for <<x::32-native <- blob>>, do: <<x::16-native>>, into: <<>>
-    #       IO.inspect(converted, label: "Converted u16 blob")
-    #       converted
-
-    #     _ ->
-    #       IO.inspect(blob, label: "Unchanged blob")
-    #       blob
-    #   end
-
-    # IO.inspect(byte_size(result), label: "Final result size in bytes")
-    # result
+    EMLX.to_blob(from_nx(tensor), limit)
   end
 
   @impl true
@@ -208,7 +191,7 @@ defmodule EMLX.Backend do
   # end
 
   @impl true
-  def sum(%T{} = out, %T{} = t, opts) do
+  def sum(%T{type: type} = out, %T{} = t, opts) do
     axes = opts[:axes] || []
     keep_axes = opts[:keep_axes] || false
 
@@ -216,10 +199,12 @@ defmodule EMLX.Backend do
     result =
       t
       |> from_nx()
-      |> EMLX.sum(axes, keep_axes)
+      |> EMLX.sum(axes, keep_axes, nx_type_to_mlx(type))
 
     # Get the actual shape after summation
     actual_shape = EMLX.shape(result)
+    # FIXME: MLX returns whatever the original type is, but Nx expects u8 -> u32
+    scalar_type = EMLX.scalar_type(result)
 
     # Create a new output tensor with the correct shape
     %{out | shape: actual_shape}

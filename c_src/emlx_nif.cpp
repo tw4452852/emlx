@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <numeric>
-#include <iostream>
+
 using namespace mlx::core;
 
 std::map<const std::string, const mlx::core::Dtype> dtypes = {
@@ -199,6 +199,7 @@ NIF(sum) {
     TENSOR_PARAM(0, t);  
     LIST_PARAM(1, std::vector<int>, axes);
     PARAM(2, bool, keep_dims);
+    TYPE_PARAM(3, result_type);
 
     // If axes is empty, sum over all dimensions
     // MLX sums over all dimensions ONLY if axes is not specified.
@@ -209,7 +210,9 @@ NIF(sum) {
         }
     }
 
-    TENSOR(mlx::core::sum(*t, axes, keep_dims));
+    auto result = mlx::core::sum(mlx::core::astype(*t, result_type), axes, keep_dims);
+
+    TENSOR(result);
 }
 
 NIF(shape) {
@@ -381,7 +384,7 @@ static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
 
 static ErlNifFunc nif_funcs[] = {
     {"scalar_type", 1, scalar_type},
-    {"sum", 3, sum},
+    {"sum", 4, sum},
     {"shape", 1, shape},
     {"to_type", 2, to_type},
     {"to_blob", 1, to_blob},
