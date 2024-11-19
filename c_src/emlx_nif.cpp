@@ -65,13 +65,13 @@ inline const mlx::core::Device string2device(const std::string &atom) {
     throw std::runtime_error("Unknown device: " + atom);
 }
 
-// Class to manage the refcount of MLX arrays
-class ArrayP {
+// Class to manage the refcount of MLX tensors
+class TensorP {
  public:
-  ArrayP(ErlNifEnv *env, const ERL_NIF_TERM arg) : ptr(nullptr) {
+  TensorP(ErlNifEnv *env, const ERL_NIF_TERM arg) : ptr(nullptr) {
     // setup
-    if (!enif_get_resource(env, arg, ARRAY_TYPE, (void **)&ptr)) {
-      err = nx::nif::error(env, "Unable to get array param in NIF");
+    if (!enif_get_resource(env, arg, TENSOR_TYPE, (void **)&ptr)) {
+      err = nx::nif::error(env, "Unable to get tensor param in NIF");
       return;
     }
 
@@ -81,7 +81,7 @@ class ArrayP {
     if (refcount->load() == 0) {
       // already deallocated
       ptr = nullptr;
-      err = nx::nif::error(env, "Array has been deallocated");
+      err = nx::nif::error(env, "Tensor has been deallocated");
       return;
     }
 
@@ -91,11 +91,11 @@ class ArrayP {
     }
   }
 
-  ~ArrayP() {
+  ~TensorP() {
     if (is_valid()) {
       // decrease reference count
       if (refcount->fetch_sub(1) == 0) {
-        ptr->~array();  // Call MLX array destructor
+        ptr->~array();  // Call MLX tensor destructor
       }
     }
   }
@@ -138,28 +138,28 @@ class ArrayP {
     return nx::nif::error(env, "Unknown error occurred");       \
   }
 
-#define ARRAY(A)                                            \
+#define TENSOR(A)                                            \
   try {                                                      \
-    return nx::nif::ok(env, create_array_resource(env, A)); \
+    return nx::nif::ok(env, create_tensor_resource(env, A)); \
   }                                                          \
   CATCH()
 
 ERL_NIF_TERM
-create_array_resource(ErlNifEnv *env, mlx::core::array array) {
+create_tensor_resource(ErlNifEnv *env, mlx::core::array tensor) {
   ERL_NIF_TERM ret;
-  mlx::core::array *arrayPtr;
+  mlx::core::array *tensorPtr;
   std::atomic<int> *refcount;
 
-  arrayPtr = (mlx::core::array *)enif_alloc_resource(ARRAY_TYPE, sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
-  if (arrayPtr == NULL)
+  tensorPtr = (mlx::core::array *)enif_alloc_resource(TENSOR_TYPE, sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
+  if (tensorPtr == NULL)
     return enif_make_badarg(env);
 
-  new (arrayPtr) mlx::core::array(std::move(array));
-  refcount = new (arrayPtr + 1) std::atomic<int>(1);
+  new (tensorPtr) mlx::core::array(std::move(tensor));
+  refcount = new (tensorPtr + 1) std::atomic<int>(1);
   new (refcount + 1) std::atomic_flag();
 
-  ret = enif_make_resource(env, arrayPtr);
-  enif_release_resource(arrayPtr);
+  ret = enif_make_resource(env, tensorPtr);
+  enif_release_resource(tensorPtr);
 
   return ret;
 }
@@ -170,8 +170,8 @@ create_array_resource(ErlNifEnv *env, mlx::core::array array) {
   TYPE VAR;                    \
   GET(ARGN, VAR)
 
-#define ARRAY_PARAM(ARGN, VAR)      \
-  ArrayP VAR##_tp(env, argv[ARGN]); \
+#define TENSOR_PARAM(ARGN, VAR)      \
+  TensorP VAR##_tp(env, argv[ARGN]); \
   mlx::core::array *VAR;                \
   if (!VAR##_tp.is_valid()) {        \
     return VAR##_tp.error();         \
@@ -185,26 +185,26 @@ if (!nx::nif::get_list(env, argv[ARGN], VAR)) \
 return nx::nif::error(env, "Unable to get " #VAR " list param.");
 
 NIF(scalar_type) {
-  ARRAY_PARAM(0, t);
+  TENSOR_PARAM(0, t);
 
   const std::string *type_name = dtype2string(t->dtype());
 
   if (type_name != nullptr)
     return nx::nif::ok(env, enif_make_atom(env, type_name->c_str()));
   else
-    return nx::nif::error(env, "Could not determine array type.");
+    return nx::nif::error(env, "Could not determine tensor type.");
 }
 
 NIF(sum) {
-    ARRAY_PARAM(0, t);  
+    TENSOR_PARAM(0, t);  
     LIST_PARAM(1, std::vector<int>, axes);
     PARAM(2, bool, keep_dims);
 
-    ARRAY(mlx::core::sum(*t, axes, keep_dims));
+    TENSOR(mlx::core::sum(*t, axes, keep_dims));
 }
 
 NIF(shape) {
-  ARRAY_PARAM(0, t);
+  TENSOR_PARAM(0, t);
 
   std::vector<ERL_NIF_TERM> sizes;
   for (int64_t dim = 0; dim < t->ndim(); dim++)
@@ -218,7 +218,7 @@ NIF(ones) {
   TYPE_PARAM(1, type);
   DEVICE_PARAM(2, device);
 
-  ARRAY(mlx::core::ones(shape, type, device));
+  TENSOR(mlx::core::ones(shape, type, device));
 }
 
 NIF(zeros) {
@@ -226,11 +226,11 @@ NIF(zeros) {
   TYPE_PARAM(1, type);
   DEVICE_PARAM(2, device);
 
-  ARRAY(mlx::core::zeros(shape, type, device));
+  TENSOR(mlx::core::zeros(shape, type, device));
 }
 
 NIF(to_type) {
-    ARRAY_PARAM(0, t);
+    TENSOR_PARAM(0, t);
     
     char type_str[32];
     if (!enif_get_atom(env, argv[1], type_str, sizeof(type_str), ERL_NIF_LATIN1)) {
@@ -241,8 +241,8 @@ NIF(to_type) {
         mlx::core::Dtype new_dtype = string2dtype(type_str);
         mlx::core::array result = mlx::core::astype(*t, new_dtype);
         
-        // Allocate and return new array resource
-        void* resource = enif_alloc_resource(ARRAY_TYPE, 
+        // Allocate and return new tensor resource
+        void* resource = enif_alloc_resource(TENSOR_TYPE, 
             sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
         
         if (!resource) {
@@ -271,7 +271,7 @@ NIF(to_type) {
 }
 
 NIF(to_blob) {
-  ARRAY_PARAM(0, t);
+  TENSOR_PARAM(0, t);
   
   try {
     // Evaluate the array to ensure data is available
@@ -290,7 +290,7 @@ NIF(to_blob) {
     // Get raw pointer to data
     const void* data_ptr = t->data<void>();
     if (data_ptr == nullptr) {
-      return nx::nif::error(env, "Failed to get array data");
+      return nx::nif::error(env, "Failed to get tensor data");
     }
 
     return nx::nif::ok(env, enif_make_resource_binary(env, t, data_ptr, byte_size));
@@ -328,11 +328,11 @@ NIF(from_blob) {
     };
 
     // Create MLX array from the buffer
-    ARRAY(mlx::core::array(mlx_buf, shape, type, deleter));
+    TENSOR(mlx::core::array(mlx_buf, shape, type, deleter));
   } catch (const std::exception& e) {
     return nx::nif::error(env, e.what());
   } catch (...) {
-    return nx::nif::error(env, "Unknown error creating array from binary data");
+    return nx::nif::error(env, "Unknown error creating tensor from binary data");
   }
 }
 
@@ -340,11 +340,11 @@ NIF(scalar_tensor) {
   SCALAR_PARAM(0, scalar);
   TYPE_PARAM(1, type);
 
-  ARRAY( mlx::core::array(scalar, type))
+  TENSOR( mlx::core::array(scalar, type))
 }
 
 
-static void free_array(ErlNifEnv* env, void* obj) {
+static void free_tensor(ErlNifEnv* env, void* obj) {
     mlx::core::array* arr = static_cast<mlx::core::array*>(obj);
     if (arr != nullptr) {
         arr->~array();
@@ -355,8 +355,8 @@ static int open_resource_type(ErlNifEnv* env) {
     const char* name = "MLXArray";
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
 
-    ARRAY_TYPE = enif_open_resource_type(env, NULL, name, free_array, flags, NULL);
-    if (ARRAY_TYPE == NULL) {
+    TENSOR_TYPE = enif_open_resource_type(env, NULL, name, free_tensor, flags, NULL);
+    if (TENSOR_TYPE == NULL) {
         return -1;
     }
     return 0;

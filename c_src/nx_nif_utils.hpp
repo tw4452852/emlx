@@ -2,7 +2,7 @@
 
 #include "erl_nif.h"
 
-ErlNifResourceType *ARRAY_TYPE;
+ErlNifResourceType *TENSOR_TYPE;
 
 #define GET(ARGN, VAR)                      \
   if (!nx::nif::get(env, argv[ARGN], &VAR)) \
@@ -252,7 +252,7 @@ namespace nx
       while (enif_get_list_cell(env, list, &head, &tail))
       {
         mlx::core::array *elem;
-        if (!enif_get_resource(env, head, ARRAY_TYPE, reinterpret_cast<void **>(&elem)))
+        if (!enif_get_resource(env, head, TENSOR_TYPE, reinterpret_cast<void **>(&elem)))
         {
           return 0;
         }
