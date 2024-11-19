@@ -314,12 +314,21 @@ NIF(from_blob) {
     return nx::nif::error(env, "Binary size is too small for the requested shape");
 
   try {
-    // Create MLX array directly from the binary data
-    // std::cout << "blob.data: " << blob.data << std::endl;
-    for (int i = 0; i < blob.size; i++) {
-      std::cout << "blob.data[" << i << "]: " << blob.data[i] << std::endl;
-    }
-    ARRAY(mlx::core::array(blob.data, shape, type));
+    // Allocate MLX buffer and copy data from blob
+    size_t byte_size = blob.size;
+    allocator::Buffer mlx_buf = allocator::malloc(byte_size);
+    void* buf_ptr = mlx_buf.raw_ptr();
+    
+    // Copy binary data to MLX buffer
+    std::memcpy(buf_ptr, blob.data, byte_size);
+
+    // Create deleter for the buffer
+    auto deleter = [](allocator::Buffer buf) {
+      allocator::free(buf);
+    };
+
+    // Create MLX array from the buffer
+    ARRAY(mlx::core::array(mlx_buf, shape, type, deleter));
   } catch (const std::exception& e) {
     return nx::nif::error(env, e.what());
   } catch (...) {
