@@ -200,6 +200,15 @@ NIF(sum) {
     LIST_PARAM(1, std::vector<int>, axes);
     PARAM(2, bool, keep_dims);
 
+    // If axes is empty, sum over all dimensions
+    // MLX sums over all dimensions ONLY if axes is not specified.
+    // If an empty vector is passed, it will not sum over any dimensions.
+    if (axes.empty()) {
+        for (int i = 0; i < t->ndim(); ++i) {
+            axes.push_back(i);
+        }
+    }
+
     TENSOR(mlx::core::sum(*t, axes, keep_dims));
 }
 
