@@ -40,8 +40,6 @@ defmodule EMLX do
   defp unwrap!({:error, error}), do: raise("EMLX: " <> List.to_string(error))
 
   defp unwrap_tensor!(tagged_result, device) do
-    IO.inspect(tagged_result, label: "unwrap_tensor!")
-
     case unwrap!(tagged_result) do
       ref when is_reference(ref) ->
         {device, ref}

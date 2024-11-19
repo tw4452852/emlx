@@ -1,4 +1,4 @@
-defmodule Emlx.MixProject do
+defmodule EMLX.MixProject do
   use Mix.Project
 
   def project do
@@ -21,7 +21,7 @@ defmodule Emlx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nx, "~> 0.9.2"},
+      {:nx, "~> 0.9.2"}
     ]
   end
 end
