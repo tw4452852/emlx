@@ -11,6 +11,14 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def eye(_m, _n, _type, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def broadcast_to(_tensor, _shape, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def scalar_type(_array) do
     :erlang.nif_error(:nif_not_loaded)
   end

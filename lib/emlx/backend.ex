@@ -211,6 +211,17 @@ defmodule EMLX.Backend do
     |> then(&to_nx(result, &1))
   end
 
+  @impl true
+  def eye(%T{shape: shape, type: type} = out, backend_options) do
+    rank = tuple_size(shape)
+    m = elem(shape, rank - 2)
+    n = elem(shape, rank - 1)
+
+    EMLX.eye(m, n, nx_type_to_mlx(type), device_option(backend_options))
+    |> EMLX.broadcast_to(shape) # FIXME: MLX returns a tensor with the correct shape, but wrong values
+    |> to_nx(out)
+  end
+
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
   defp constant_serialize_scalar(%Complex{} = c), do: Complex.abs(c)

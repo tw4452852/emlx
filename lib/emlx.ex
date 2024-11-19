@@ -3,9 +3,6 @@ defmodule EMLX do
 
   defguard is_tensor(device, ref) when is_reference(ref) and is_atom(device)
 
-  # defdevice(ones(shape, type, device))
-  # defdevice(zeros(shape, type, device))
-
   def ones(shape, type, device), do: NIF.ones(shape, type, device) |> unwrap_tensor!(device)
   def zeros(shape, type, device), do: NIF.zeros(shape, type, device) |> unwrap_tensor!(device)
 
@@ -34,6 +31,10 @@ defmodule EMLX do
   def sum({device, ref}, axes, keep_dims, result_type) when is_tensor(device, ref) do
     NIF.sum(ref, axes, keep_dims, result_type) |> unwrap_tensor!(device)
   end
+
+  def eye(m, n, type, device), do: NIF.eye(m, n, type, device) |> unwrap_tensor!(device)
+
+  def broadcast_to({device, ref}, shape), do: NIF.broadcast_to(ref, shape, device) |> unwrap_tensor!(device)
 
   defp unwrap!(:ok), do: :ok
   defp unwrap!({:ok, result}), do: result

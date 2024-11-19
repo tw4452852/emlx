@@ -2,8 +2,21 @@
 
 **TODO**
 
-- [ ] Nx.sum is broken
-- 
+- [ ] broadcasting with eye gives incorrect tensor 
+
+MLX seems to be doing th right thing, but the expansion gets zero'd out by the time we get it for some reason.
+```
+  {:cpu, #Reference<0.4099841517.3590193156.176885>}
+iex(2)>
+nil
+iex(3)> broadcasted = EMLX.broadcast_to(base_eye, {2,2,2})Tensor: array([1, 0], dtype=uint8) array([0, 1], dtype=uint8)
+                                  Result shape: (2,2,2)
+                                                       Result: array([[1, 0],
+                                                                                    [0, 1]], dtype=uint8)
+                   array([[1, 0],
+                                        [0, 1]], dtype=uint8)
+
+```
 
 ## Current setup(probably needs to be improved)
 

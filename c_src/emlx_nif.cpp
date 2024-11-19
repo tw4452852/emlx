@@ -355,6 +355,22 @@ NIF(scalar_tensor) {
   TENSOR( mlx::core::array(scalar, type))
 }
 
+NIF(eye) {
+  PARAM(0, int, m);
+  PARAM(1, int, n);
+  TYPE_PARAM(2, type);
+  DEVICE_PARAM(3, device);
+
+  TENSOR(mlx::core::eye(m, n, 0, type, device));
+}
+
+NIF(broadcast_to) {
+  TENSOR_PARAM(0, t);
+  SHAPE_PARAM(1, shape);
+  DEVICE_PARAM(2, device);
+
+  TENSOR(mlx::core::broadcast_to(*t, shape, device));
+}
 
 static void free_tensor(ErlNifEnv* env, void* obj) {
     mlx::core::array* arr = static_cast<mlx::core::array*>(obj);
@@ -393,6 +409,8 @@ static ErlNifFunc nif_funcs[] = {
     {"scalar_tensor", 2, scalar_tensor},
     {"ones", 3, ones},
     {"zeros", 3, zeros},
+    {"eye", 4, eye},
+    {"broadcast_to", 3, broadcast_to},
 };
 
 
