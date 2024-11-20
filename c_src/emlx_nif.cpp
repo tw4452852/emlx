@@ -249,34 +249,43 @@ NIF(to_type) {
 }
 
 NIF(to_blob) {
-  TENSOR_PARAM(0, t);
+    ERL_NIF_TERM result;
+    TENSOR_PARAM(0, t);
   
-  try {
-    // Evaluate the array to ensure data is available
-    mlx::core::eval(*t);
-    
     size_t byte_size = t->nbytes();
-    int64_t limit = 0;
+    int limit = 0;
     bool has_received_limit = (argc == 2);
 
     if (has_received_limit) {
-      PARAM(1, int64_t, param_limit);
-      limit = param_limit;
-      byte_size = limit * t->itemsize();
+        PARAM(1, int, param_limit);
+        limit = param_limit;
+        byte_size = limit * t->itemsize();
     }
+
+    // flatten the tensor to compensate for operations which return
+    // a column-major tensor. t->flatten() is a no-op if the tensor
+    // is already row-major, which was verified by printing t->data_ptr
+    // and reshaped.data_ptr and confirming they had the same value.
+    // We also slice if a limit was received and it doesn't encompass the full tensor.
+    mlx::core::array flattened = mlx::core::flatten(*t);
+    mlx::core::array reshaped = (has_received_limit && byte_size < t->nbytes()) ? 
+        // We only care about slicing the first dimension
+        mlx::core::slice(flattened, std::vector<int>{0}, std::vector<int>{limit}) : 
+        flattened;
+
+    // Evaluate the array to ensure data is available
+    mlx::core::eval(reshaped);
 
     // Get raw pointer to data
-    const void* data_ptr = t->data<void>();
+    const void* data_ptr = reshaped.data<void>();
+
     if (data_ptr == nullptr) {
-      return nx::nif::error(env, "Failed to get tensor data");
+        return nx::nif::error(env, "Failed to get tensor data");
     }
 
-    return nx::nif::ok(env, enif_make_resource_binary(env, t, data_ptr, byte_size));
-  } catch (const std::exception& e) {
-    return nx::nif::error(env, e.what());
-  } catch (...) {
-    return nx::nif::error(env, "Unknown error during data copy");
-  }
+    void *result_data = (void *)enif_make_new_binary(env, byte_size, &result);
+    memcpy(result_data, data_ptr, byte_size);
+    return nx::nif::ok(env, result);
 }
 
 uint64_t elem_count(std::vector<int> shape) {
@@ -335,7 +344,9 @@ NIF(broadcast_to) {
   SHAPE_PARAM(1, shape);
   DEVICE_PARAM(2, device);
 
-  TENSOR(mlx::core::broadcast_to(*t, shape, device));
+  auto result = mlx::core::broadcast_to(*t, shape, device);
+
+  TENSOR(result);
 }
 
 static void free_tensor(ErlNifEnv* env, void* obj) {
