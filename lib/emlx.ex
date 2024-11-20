@@ -17,7 +17,7 @@ defmodule EMLX do
     do: NIF.to_blob(ref) |> unwrap!()
 
   def to_type({device, ref}, type) when is_tensor(device, ref),
-    do: NIF.to_type(ref, type) |> unwrap!()
+    do: NIF.to_type(ref, type) |> unwrap_tensor!(device)
 
   def to_blob({device, ref}, limit) when is_tensor(device, ref),
     do: NIF.to_blob(ref, limit) |> unwrap!()
@@ -34,7 +34,11 @@ defmodule EMLX do
 
   def eye(m, n, type, device), do: NIF.eye(m, n, type, device) |> unwrap_tensor!(device)
 
-  def broadcast_to({device, ref}, shape), do: NIF.broadcast_to(ref, shape, device) |> unwrap_tensor!(device)
+  def broadcast_to({device, ref}, shape),
+    do: NIF.broadcast_to(ref, shape, device) |> unwrap_tensor!(device)
+
+  def tensordot({device, refA} = tensorA, {_, refB} = tensorB, axes_a, axes_b),
+    do: NIF.tensordot(refA, refB, axes_a, axes_b, device) |> unwrap_tensor!(device)
 
   defp unwrap!(:ok), do: :ok
   defp unwrap!({:ok, result}), do: result

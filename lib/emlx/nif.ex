@@ -47,13 +47,18 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def tensordot(_a, _b, _axes_a, _axes_b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def scalar_tensor(_value, _type) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   @on_load :load_nifs
   def load_nifs do
     path = :filename.join(:code.priv_dir(:emlx), ~c"libemlx")
     :erlang.load_nif(path, 0)
   end
 
-  def scalar_tensor(_value, _type) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
 end

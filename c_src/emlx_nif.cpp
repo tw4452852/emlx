@@ -2,26 +2,19 @@
 #include "mlx/mlx.h"
 #include "nx_nif_utils.hpp"
 #include <map>
-#include <string>
 #include <numeric>
+#include <string>
 
 using namespace mlx::core;
 
 std::map<const std::string, const mlx::core::Dtype> dtypes = {
-    {"bool", mlx::core::bool_},
-    {"uint8", mlx::core::uint8},
-    {"uint16", mlx::core::uint16},
-    {"uint32", mlx::core::uint32},
-    {"uint64", mlx::core::uint64},
-    {"int8", mlx::core::int8},
-    {"int16", mlx::core::int16},
-    {"int32", mlx::core::int32},
-    {"int64", mlx::core::int64},
-    {"float16", mlx::core::float16},
-    {"float32", mlx::core::float32},
-    {"bfloat16", mlx::core::bfloat16},
-    {"complex64", mlx::core::complex64}
-};
+    {"bool", mlx::core::bool_},         {"uint8", mlx::core::uint8},
+    {"uint16", mlx::core::uint16},      {"uint32", mlx::core::uint32},
+    {"uint64", mlx::core::uint64},      {"int8", mlx::core::int8},
+    {"int16", mlx::core::int16},        {"int32", mlx::core::int32},
+    {"int64", mlx::core::int64},        {"float16", mlx::core::float16},
+    {"float32", mlx::core::float32},    {"bfloat16", mlx::core::bfloat16},
+    {"complex64", mlx::core::complex64}};
 
 std::map<const std::string, const uint8_t> dtype_sizes = {
     {"bool", mlx::core::bool_.size()},
@@ -36,38 +29,37 @@ std::map<const std::string, const uint8_t> dtype_sizes = {
     {"float16", mlx::core::float16.size()},
     {"float32", mlx::core::float32.size()},
     {"bfloat16", mlx::core::bfloat16.size()},
-    {"complex64", mlx::core::complex64.size()}
-};
+    {"complex64", mlx::core::complex64.size()}};
 
 inline mlx::core::Dtype string2dtype(const std::string &atom) {
-    auto it = dtypes.find(atom);
-    if (it != dtypes.end()) {
-        return it->second;
-    }
-    throw std::runtime_error("Unknown dtype: " + atom);
+  auto it = dtypes.find(atom);
+  if (it != dtypes.end()) {
+    return it->second;
+  }
+  throw std::runtime_error("Unknown dtype: " + atom);
 }
 
 inline const std::string *dtype2string(const mlx::core::Dtype dtype) {
-    for (const auto& pair : dtypes) {
-        if (pair.second == dtype) {
-            return &pair.first;
-        }
+  for (const auto &pair : dtypes) {
+    if (pair.second == dtype) {
+      return &pair.first;
     }
-    return nullptr;
+  }
+  return nullptr;
 }
 
 inline const mlx::core::Device string2device(const std::string &atom) {
-    if (atom == "cpu") {
-        return mlx::core::Device(mlx::core::Device::DeviceType::cpu, 0);
-    } else if (atom == "gpu") {
-        return mlx::core::Device(mlx::core::Device::DeviceType::gpu, 0);
-    }
-    throw std::runtime_error("Unknown device: " + atom);
+  if (atom == "cpu") {
+    return mlx::core::Device(mlx::core::Device::DeviceType::cpu, 0);
+  } else if (atom == "gpu") {
+    return mlx::core::Device(mlx::core::Device::DeviceType::gpu, 0);
+  }
+  throw std::runtime_error("Unknown device: " + atom);
 }
 
 // Class to manage the refcount of MLX tensors
 class TensorP {
- public:
+public:
   TensorP(ErlNifEnv *env, const ERL_NIF_TERM arg) : ptr(nullptr) {
     // setup
     if (!enif_get_resource(env, arg, TENSOR_TYPE, (void **)&ptr)) {
@@ -95,7 +87,7 @@ class TensorP {
     if (is_valid()) {
       // decrease reference count
       if (refcount->fetch_sub(1) == 0) {
-        ptr->~array();  // Call MLX tensor destructor
+        ptr->~array(); // Call MLX tensor destructor
       }
     }
   }
@@ -109,39 +101,33 @@ class TensorP {
     }
   }
 
-  mlx::core::array *data() const {
-    return ptr;
-  }
+  mlx::core::array *data() const { return ptr; }
 
-  bool is_valid() const {
-    return ptr != nullptr;
-  }
+  bool is_valid() const { return ptr != nullptr; }
 
-  ERL_NIF_TERM error() {
-    return err;
-  }
+  ERL_NIF_TERM error() { return err; }
 
- private:
+private:
   mlx::core::array *ptr;
   std::atomic<int> *refcount;
   std::atomic_flag *deleted;
   ERL_NIF_TERM err;
 };
 
-#define CATCH()                                                  \
-  catch (const std::exception& e) {                             \
-    std::ostringstream msg;                                     \
-    msg << e.what() << " in NIF." << __func__ << "/" << argc;  \
-    return nx::nif::error(env, msg.str().c_str());             \
-  }                                                             \
-  catch (...) {                                                 \
-    return nx::nif::error(env, "Unknown error occurred");       \
+#define CATCH()                                                                \
+  catch (const std::exception &e) {                                            \
+    std::ostringstream msg;                                                    \
+    msg << e.what() << " in NIF." << __func__ << "/" << argc;                  \
+    return nx::nif::error(env, msg.str().c_str());                             \
+  }                                                                            \
+  catch (...) {                                                                \
+    return nx::nif::error(env, "Unknown error occurred");                      \
   }
 
-#define TENSOR(A)                                            \
-  try {                                                      \
-    return nx::nif::ok(env, create_tensor_resource(env, A)); \
-  }                                                          \
+#define TENSOR(A)                                                              \
+  try {                                                                        \
+    return nx::nif::ok(env, create_tensor_resource(env, A));                   \
+  }                                                                            \
   CATCH()
 
 ERL_NIF_TERM
@@ -150,7 +136,9 @@ create_tensor_resource(ErlNifEnv *env, mlx::core::array tensor) {
   mlx::core::array *tensorPtr;
   std::atomic<int> *refcount;
 
-  tensorPtr = (mlx::core::array *)enif_alloc_resource(TENSOR_TYPE, sizeof(mlx::core::array) + sizeof(std::atomic<int>) + sizeof(std::atomic_flag));
+  tensorPtr = (mlx::core::array *)enif_alloc_resource(
+      TENSOR_TYPE, sizeof(mlx::core::array) + sizeof(std::atomic<int>) +
+                       sizeof(std::atomic_flag));
   if (tensorPtr == NULL)
     return enif_make_badarg(env);
 
@@ -164,25 +152,26 @@ create_tensor_resource(ErlNifEnv *env, mlx::core::array tensor) {
   return ret;
 }
 
-#define NIF(NAME) ERL_NIF_TERM NAME(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+#define NIF(NAME)                                                              \
+  ERL_NIF_TERM NAME(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
-#define PARAM(ARGN, TYPE, VAR) \
-  TYPE VAR;                    \
+#define PARAM(ARGN, TYPE, VAR)                                                 \
+  TYPE VAR;                                                                    \
   GET(ARGN, VAR)
 
-#define TENSOR_PARAM(ARGN, VAR)      \
-  TensorP VAR##_tp(env, argv[ARGN]); \
-  mlx::core::array *VAR;                \
-  if (!VAR##_tp.is_valid()) {        \
-    return VAR##_tp.error();         \
-  } else {                           \
-    VAR = VAR##_tp.data();           \
+#define TENSOR_PARAM(ARGN, VAR)                                                \
+  TensorP VAR##_tp(env, argv[ARGN]);                                           \
+  mlx::core::array *VAR;                                                       \
+  if (!VAR##_tp.is_valid()) {                                                  \
+    return VAR##_tp.error();                                                   \
+  } else {                                                                     \
+    VAR = VAR##_tp.data();                                                     \
   }
 
-#define LIST_PARAM(ARGN, TYPE, VAR)             \
-TYPE VAR;                                      \
-if (!nx::nif::get_list(env, argv[ARGN], VAR)) \
-return nx::nif::error(env, "Unable to get " #VAR " list param.");
+#define LIST_PARAM(ARGN, TYPE, VAR)                                            \
+  TYPE VAR;                                                                    \
+  if (!nx::nif::get_list(env, argv[ARGN], VAR))                                \
+    return nx::nif::error(env, "Unable to get " #VAR " list param.");
 
 NIF(scalar_type) {
   TENSOR_PARAM(0, t);
@@ -196,23 +185,24 @@ NIF(scalar_type) {
 }
 
 NIF(sum) {
-    TENSOR_PARAM(0, t);  
-    LIST_PARAM(1, std::vector<int>, axes);
-    PARAM(2, bool, keep_dims);
-    TYPE_PARAM(3, result_type);
+  TENSOR_PARAM(0, t);
+  LIST_PARAM(1, std::vector<int>, axes);
+  PARAM(2, bool, keep_dims);
+  TYPE_PARAM(3, result_type);
 
-    // If axes is empty, sum over all dimensions
-    // MLX sums over all dimensions ONLY if axes is not specified.
-    // If an empty vector is passed, it will not sum over any dimensions.
-    if (axes.empty()) {
-        for (int i = 0; i < t->ndim(); ++i) {
-            axes.push_back(i);
-        }
+  // If axes is empty, sum over all dimensions
+  // MLX sums over all dimensions ONLY if axes is not specified.
+  // If an empty vector is passed, it will not sum over any dimensions.
+  if (axes.empty()) {
+    for (int i = 0; i < t->ndim(); ++i) {
+      axes.push_back(i);
     }
+  }
 
-    auto result = mlx::core::sum(mlx::core::astype(*t, result_type), axes, keep_dims);
+  auto result =
+      mlx::core::sum(mlx::core::astype(*t, result_type), axes, keep_dims);
 
-    TENSOR(result);
+  TENSOR(result);
 }
 
 NIF(shape) {
@@ -222,7 +212,8 @@ NIF(shape) {
   for (int64_t dim = 0; dim < t->ndim(); dim++)
     sizes.push_back(nx::nif::make(env, static_cast<int64_t>(t->shape()[dim])));
 
-  return nx::nif::ok(env, enif_make_tuple_from_array(env, sizes.data(), sizes.size()));
+  return nx::nif::ok(
+      env, enif_make_tuple_from_array(env, sizes.data(), sizes.size()));
 }
 
 NIF(ones) {
@@ -242,50 +233,54 @@ NIF(zeros) {
 }
 
 NIF(to_type) {
-    TENSOR_PARAM(0, t);
-    TYPE_PARAM(1, type);
-    
-    TENSOR(mlx::core::astype(*t, type));
+  TENSOR_PARAM(0, t);
+  TYPE_PARAM(1, type);
+
+  TENSOR(mlx::core::astype(*t, type));
 }
 
 NIF(to_blob) {
-    ERL_NIF_TERM result;
-    TENSOR_PARAM(0, t);
-  
-    size_t byte_size = t->nbytes();
-    int limit = 0;
-    bool has_received_limit = (argc == 2);
+  ERL_NIF_TERM result;
+  TENSOR_PARAM(0, t);
 
-    if (has_received_limit) {
-        PARAM(1, int, param_limit);
-        limit = param_limit;
-        byte_size = limit * t->itemsize();
-    }
+  size_t byte_size = t->nbytes();
+  int limit = 0;
+  bool has_received_limit = (argc == 2);
 
-    // flatten the tensor to compensate for operations which return
-    // a column-major tensor. t->flatten() is a no-op if the tensor
-    // is already row-major, which was verified by printing t->data_ptr
-    // and reshaped.data_ptr and confirming they had the same value.
-    // We also slice if a limit was received and it doesn't encompass the full tensor.
-    mlx::core::array flattened = mlx::core::flatten(*t);
-    mlx::core::array reshaped = (has_received_limit && byte_size < t->nbytes()) ? 
-        // We only care about slicing the first dimension
-        mlx::core::slice(flattened, std::vector<int>{0}, std::vector<int>{limit}) : 
-        flattened;
+  if (has_received_limit) {
+    PARAM(1, int, param_limit);
+    limit = param_limit;
+    byte_size = limit * t->itemsize();
+  }
 
-    // Evaluate the array to ensure data is available
-    mlx::core::eval(reshaped);
+  // flatten the tensor to compensate for operations which return
+  // a column-major tensor. t->flatten() is a no-op if the tensor
+  // is already row-major, which was verified by printing t->data_ptr
+  // and reshaped.data_ptr and confirming they had the same value.
+  // We also slice if a limit was received and it doesn't encompass the full
+  // tensor.
+  mlx::core::array flattened = mlx::core::flatten(*t);
+  mlx::core::array reshaped =
+      (has_received_limit && byte_size < t->nbytes())
+          ?
+          // We only care about slicing the first dimension
+          mlx::core::slice(flattened, std::vector<int>{0},
+                           std::vector<int>{limit})
+          : flattened;
 
-    // Get raw pointer to data
-    const void* data_ptr = reshaped.data<void>();
+  // Evaluate the array to ensure data is available
+  mlx::core::eval(reshaped);
 
-    if (data_ptr == nullptr) {
-        return nx::nif::error(env, "Failed to get tensor data");
-    }
+  // Get raw pointer to data
+  const void *data_ptr = reshaped.data<void>();
 
-    void *result_data = (void *)enif_make_new_binary(env, byte_size, &result);
-    memcpy(result_data, data_ptr, byte_size);
-    return nx::nif::ok(env, result);
+  if (data_ptr == nullptr) {
+    return nx::nif::error(env, "Failed to get tensor data");
+  }
+
+  void *result_data = (void *)enif_make_new_binary(env, byte_size, &result);
+  memcpy(result_data, data_ptr, byte_size);
+  return nx::nif::ok(env, result);
 }
 
 uint64_t elem_count(std::vector<int> shape) {
@@ -298,28 +293,28 @@ NIF(from_blob) {
   TYPE_PARAM(2, type);
 
   if (blob.size / dtype_sizes[type_atom] < elem_count(shape))
-    return nx::nif::error(env, "Binary size is too small for the requested shape");
+    return nx::nif::error(env,
+                          "Binary size is too small for the requested shape");
 
   try {
     // Allocate MLX buffer and copy data from blob
     size_t byte_size = blob.size;
     allocator::Buffer mlx_buf = allocator::malloc(byte_size);
-    void* buf_ptr = mlx_buf.raw_ptr();
-    
+    void *buf_ptr = mlx_buf.raw_ptr();
+
     // Copy binary data to MLX buffer
     std::memcpy(buf_ptr, blob.data, byte_size);
 
     // Create deleter for the buffer
-    auto deleter = [](allocator::Buffer buf) {
-      allocator::free(buf);
-    };
+    auto deleter = [](allocator::Buffer buf) { allocator::free(buf); };
 
     // Create MLX array from the buffer
     TENSOR(mlx::core::array(mlx_buf, shape, type, deleter));
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     return nx::nif::error(env, e.what());
   } catch (...) {
-    return nx::nif::error(env, "Unknown error creating tensor from binary data");
+    return nx::nif::error(env,
+                          "Unknown error creating tensor from binary data");
   }
 }
 
@@ -327,7 +322,7 @@ NIF(scalar_tensor) {
   SCALAR_PARAM(0, scalar);
   TYPE_PARAM(1, type);
 
-  TENSOR( mlx::core::array(scalar, type))
+  TENSOR(mlx::core::array(scalar, type))
 }
 
 NIF(eye) {
@@ -349,30 +344,42 @@ NIF(broadcast_to) {
   TENSOR(result);
 }
 
-static void free_tensor(ErlNifEnv* env, void* obj) {
-    mlx::core::array* arr = static_cast<mlx::core::array*>(obj);
-    if (arr != nullptr) {
-        arr->~array();
-    }
+NIF(tensordot) {
+  TENSOR_PARAM(0, a);
+  TENSOR_PARAM(1, b);
+  LIST_PARAM(2, std::vector<int>, axes1);
+  LIST_PARAM(3, std::vector<int>, axes2);
+  DEVICE_PARAM(4, device);
+
+  TENSOR(mlx::core::tensordot(*a, *b, axes1, axes2, device));
 }
 
-static int open_resource_type(ErlNifEnv* env) {
-    const char* name = "MLXArray";
-    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
+static void free_tensor(ErlNifEnv *env, void *obj) {
+  mlx::core::array *arr = static_cast<mlx::core::array *>(obj);
+  if (arr != nullptr) {
+    arr->~array();
+  }
+}
 
-    TENSOR_TYPE = enif_open_resource_type(env, NULL, name, free_tensor, flags, NULL);
-    if (TENSOR_TYPE == NULL) {
-        return -1;
-    }
-    return 0;
+static int open_resource_type(ErlNifEnv *env) {
+  const char *name = "MLXArray";
+  ErlNifResourceFlags flags =
+      (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
+
+  TENSOR_TYPE =
+      enif_open_resource_type(env, NULL, name, free_tensor, flags, NULL);
+  if (TENSOR_TYPE == NULL) {
+    return -1;
+  }
+  return 0;
 }
 
 // In your module load function:
-static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
-    if (open_resource_type(env) != 0) {
-        return -1;
-    }
-    return 0;
+static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
+  if (open_resource_type(env) != 0) {
+    return -1;
+  }
+  return 0;
 }
 
 static ErlNifFunc nif_funcs[] = {
@@ -388,8 +395,8 @@ static ErlNifFunc nif_funcs[] = {
     {"zeros", 3, zeros},
     {"eye", 4, eye},
     {"broadcast_to", 3, broadcast_to},
+    {"tensordot", 5, tensordot},
 };
-
 
 // Update the NIF initialization
 ERL_NIF_INIT(Elixir.EMLX.NIF, nif_funcs, load, NULL, NULL, NULL)

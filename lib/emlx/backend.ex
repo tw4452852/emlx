@@ -218,13 +218,42 @@ defmodule EMLX.Backend do
     n = elem(shape, rank - 1)
 
     EMLX.eye(m, n, nx_type_to_mlx(type), device_option(backend_options))
-    |> EMLX.broadcast_to(shape) # FIXME: MLX returns a tensor with the correct shape, but wrong values
+    |> EMLX.broadcast_to(shape)
+    |> to_nx(out)
+  end
+
+  @impl true
+  def dot(
+        %T{type: out_type} = out,
+        %T{type: left_type} = left,
+        left_axes,
+        # MLX doesn't support batched axes
+        _left_batched_axes,
+        %T{type: right_type} = right,
+        right_axes,
+        _right_batched_axes
+      ) do
+    left_tx = from_nx(left)
+    right_tx = from_nx(right) |> IO.inspect(label: "right_tx before to_typed")
+
+    EMLX.tensordot(
+      to_typed_ref(left_tx, left_type, out_type) |> IO.inspect(label: "left_tx"),
+      to_typed_ref(right_tx, right_type, out_type) |> IO.inspect(label: "right_tx"),
+      left_axes,
+      right_axes
+    )
     |> to_nx(out)
   end
 
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
   defp constant_serialize_scalar(%Complex{} = c), do: Complex.abs(c)
+
+  defp to_typed_ref(tensor, expected_type, expected_type),
+    do: tensor
+
+  defp to_typed_ref(tensor, ref_type, expected_type),
+    do: EMLX.to_type(tensor, nx_type_to_mlx(expected_type))
 
   defp device_option(nil), do: :cpu
   defp device_option(backend_opts), do: backend_opts[:device] || :cpu
