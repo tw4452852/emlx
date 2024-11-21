@@ -244,8 +244,9 @@ NIF(reshape) {
 NIF(to_type) {
   TENSOR_PARAM(0, t);
   TYPE_PARAM(1, type);
+  DEVICE_PARAM(2, device);
 
-  TENSOR(mlx::core::astype(*t, type));
+  TENSOR(mlx::core::astype(*t, type, device));
 }
 
 NIF(to_blob) {
@@ -441,7 +442,7 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"sum", 4, sum},
                                  {"shape", 1, shape},
                                  {"reshape", 3, reshape},
-                                 {"to_type", 2, to_type},
+                                 {"to_type", 3, to_type},
                                  {"to_blob", 1, to_blob},
                                  {"to_blob", 2, to_blob},
                                  {"from_blob", 4, from_blob},

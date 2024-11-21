@@ -27,7 +27,7 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def to_type(_array, _type) do
+  def to_type(_array, _type, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

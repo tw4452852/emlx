@@ -355,6 +355,9 @@ defmodule EMLX.Backend do
     Nx.reshape(t, new_shape)
   end
 
+  @impl true
+  def as_type(%T{type: type} = out, %T{} = t),
+    do: from_nx(t) |> EMLX.to_type(nx_type_to_mlx(type)) |> bitmask(type) |> to_nx(out)
 
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
