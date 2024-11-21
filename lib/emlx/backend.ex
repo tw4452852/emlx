@@ -249,39 +249,75 @@ defmodule EMLX.Backend do
     EMLX.abs(from_nx(tensor)) |> to_nx(out)
   end
 
-  @impl true
-  def add(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.add(from_nx(a), from_nx(b)) |> to_nx(out)
+  # Ops
+
+  ops = [:add, :subtract, :multiply, :pow, :left_shift]
+
+  for op <- ops do
+    @impl true
+    def unquote(op)(out, l, r) do
+      {left, right} = maybe_upcast(l, r)
+      {left_tx, right_tx} = maybe_broadcast_bin_args(out.shape, left, right)
+      result = EMLX.unquote(op)(left_tx, right_tx)
+
+      result
+      |> bitmask(out.type)
+      |> EMLX.to_type(nx_type_to_mlx(out.type))
+      |> to_nx(out)
+    end
   end
 
-  @impl true
-  def subtract(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.subtract(from_nx(a), from_nx(b)) |> to_nx(out)
+  defp bitmask({device, _} = tensor, {:u, 16}),
+    do: EMLX.bitwise_and(tensor, EMLX.scalar_tensor(0xFFFF, :int, device))
+
+  defp bitmask({device, _} = tensor, {:u, 32}),
+    do: EMLX.bitwise_and(tensor, EMLX.scalar_tensor(0xFFFF_FFFF, :long, device))
+
+  defp bitmask(tensor, {_, _}),
+    do: tensor
+
+  ops =
+    [:min, :max, :divide, :quotient, :atan2] ++
+      [:right_shift, :logical_and, :logical_or, :logical_xor] ++
+      [:equal, :not_equal, :greater, :less, :greater_equal, :less_equal]
+
+  for op <- ops do
+    @impl true
+    def unquote(op)(out, l, r) do
+      {left, right} = maybe_upcast(l, r)
+      {left_tx, right_tx} = maybe_broadcast_bin_args(out.shape, left, right)
+
+      EMLX.unquote(op)(left_tx, right_tx)
+      |> EMLX.to_type(nx_type_to_mlx(out.type))
+      |> to_nx(out)
+    end
   end
 
-  @impl true
-  def multiply(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.multiply(from_nx(a), from_nx(b)) |> to_nx(out)
+  defp maybe_upcast(%T{type: t} = left, %T{type: t} = right),
+    do: {left, right}
+
+  defp maybe_upcast(left, right) do
+    type = Nx.Type.merge(left.type, right.type)
+    {Nx.as_type(left, type), Nx.as_type(right, type)}
   end
 
-  @impl true
-  def equal(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.equal(from_nx(a), from_nx(b)) |> to_nx(out)
-  end
+  defp maybe_broadcast_bin_args(out_shape, l, r) do
+    l_tx =
+      case l.shape do
+        ^out_shape ->
+          from_nx(l)
 
-  @impl true
-  def not_equal(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.not_equal(from_nx(a), from_nx(b)) |> to_nx(out)
-  end
+        _ ->
+          l |> from_nx() |> EMLX.broadcast_to(out_shape)
+      end
 
-  @impl true
-  def greater_equal(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.greater_equal(from_nx(a), from_nx(b)) |> to_nx(out)
-  end
+    r_tx =
+      case r.shape do
+        ^out_shape -> from_nx(r)
+        _ -> r |> from_nx() |> EMLX.broadcast_to(out_shape)
+      end
 
-  @impl true
-  def less_equal(%T{} = out, %T{} = a, %T{} = b) do
-    EMLX.less_equal(from_nx(a), from_nx(b)) |> to_nx(out)
+    {l_tx, r_tx}
   end
 
   @impl true
