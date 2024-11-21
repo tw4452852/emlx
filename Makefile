@@ -1,6 +1,6 @@
 # Private configuration
 PRIV_DIR = $(MIX_APP_PATH)/priv
-BUILD_DIR = $(MIX_APP_PATH)/build
+BUILD_DIR = cache/emlx-$(EMLX_VERSION)/objs
 EMLX_SO = $(PRIV_DIR)/libemlx.so
 EMLX_LIB_DIR = $(PRIV_DIR)/mlx/lib
 
