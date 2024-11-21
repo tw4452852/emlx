@@ -112,32 +112,17 @@ defmodule EMLX do
     end
   end
 
-
-  def ones(shape, type, device), do: NIF.ones(shape, type, device) |> unwrap_tensor!(device)
-  def zeros(shape, type, device), do: NIF.zeros(shape, type, device) |> unwrap_tensor!(device)
-
-  ## Non-dirty non-tensor return values
-
-  def to_type({device, ref}, type) when is_tensor(device, ref),
-    do: NIF.to_type(ref, type) |> unwrap_tensor!(device)
-
-  # def from_blob(shape, type, binary, device),
-  #   do: NIF.from_blob(shape, type, binary) |> unwrap_tensor!(device)
-
-  def scalar_tensor(value, type, device),
-    do: NIF.scalar_tensor(value, type) |> unwrap_tensor!(device)
-
-  def tensordot({device, refA} = tensorA, {_, refB} = tensorB, axes_a, axes_b),
-    do: NIF.tensordot(refA, refB, axes_a, axes_b, device) |> unwrap_tensor!(device)
-
   ## Creation / conversion
   def eye(size, type, device), do: eye(size, size, type, device)
   defdevice eye(m, n, type, device)
   defdevice from_blob(blob, shape, type, device)
+  defdevice scalar_tensor(scalar, type, device)
+  defdevice ones(shape, type, device)
 
   ## Manipulation
   deftensor reshape(tensor, shape)
   deftensor broadcast_to(tensor, shape)
+  deftensor to_type(tensor, type)
 
   ## Binary ops
   deftensor add(tensorA, tensorB)
@@ -147,6 +132,10 @@ defmodule EMLX do
   deftensor not_equal(tensorA, tensorB)
   deftensor less_equal(tensorA, tensorB)
   deftensor greater_equal(tensorA, tensorB)
+  def tensordot(tensorA, tensorB, axesA, axesB),
+    do: tensordot(tensorA, tensorB, axesA, [], axesB, [])
+
+  deftensor tensordot(tensorA, tensorB, axesA, batchA, axesB, batchB)
 
   ## Unary ops
   deftensor abs(tensor)

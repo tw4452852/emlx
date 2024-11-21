@@ -3,10 +3,6 @@ defmodule EMLX.NIF do
   Elixir bindings for MLX array operations.
   """
 
-  def zeros(_shape, _type, _device) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
-
   def ones(_shape, _type, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
@@ -56,7 +52,7 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def scalar_tensor(_value, _type) do
+  def scalar_tensor(_value, _type, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

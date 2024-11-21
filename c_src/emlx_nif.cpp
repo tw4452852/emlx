@@ -341,6 +341,7 @@ NIF(from_blob) {
 NIF(scalar_tensor) {
   SCALAR_PARAM(0, scalar);
   TYPE_PARAM(1, type);
+  // DEVICE_PARAM(2, device);
 
   TENSOR(mlx::core::array(scalar, type))
 }
@@ -444,9 +445,8 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"to_blob", 1, to_blob},
                                  {"to_blob", 2, to_blob},
                                  {"from_blob", 4, from_blob},
-                                 {"scalar_tensor", 2, scalar_tensor},
+                                 {"scalar_tensor", 3, scalar_tensor},
                                  {"ones", 3, ones},
-                                 {"zeros", 3, zeros},
                                  {"eye", 4, eye},
                                  {"broadcast_to", 3, broadcast_to},
                                  {"tensordot", 5, tensordot},
