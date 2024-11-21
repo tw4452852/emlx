@@ -18,26 +18,6 @@ iex(3)> broadcasted = EMLX.broadcast_to(base_eye, {2,2,2})Tensor: array([1, 0], 
 
 ```
 
-## Current setup(probably needs to be improved)
-
-1. Clone/download MLX source to `priv/mlx-src`
-
-```
-cmake -B priv/mlx-src/build -DCMAKE_INSTALL_PREFIX=$HOME/.local -DBUILD_SHARED_LIBS=ON
-make -j8 -C priv/mlx-src/build
-make -C priv/mlx-src/build install
-```
-
-2. Build `libemlx.so`:
-
-```
-# First, edit the Makefile to set the correct paths at the top of the file(TODO: these can be passed by a mix task)
-
-# Then, run:
-make -f c_src/Makefile
-```
-
-
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed

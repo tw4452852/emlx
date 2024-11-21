@@ -1,19 +1,3 @@
-# Environment variables passed via elixir_make
-# ERTS_INCLUDE_DIR
-# MIX_APP_PATH
-ERTS_INCLUDE_DIR=/Users/samrat/.asdf/installs/erlang/26.1.2/erts-14.1.1/include
-MIX_APP_PATH=/Users/samrat/code/emlx
-
-# MLX configuration
-# MLX configuration
-MLX_INSTALL_DIR =/Users/samrat/.local
-MLX_LIB_DIR = $(MLX_INSTALL_DIR)/lib
-MLX_INCLUDE_DIR = $(MLX_INSTALL_DIR)/include
-
-# MLX_BUILD_DIR = c_src/mlx/build
-# MLX_LIB_DIR = $(MLX_BUILD_DIR)/mlx
-# MLX_INCLUDE_DIR = c_src/mlx
-
 # Private configuration
 PRIV_DIR = $(MIX_APP_PATH)/priv
 EMLX_SO = $(PRIV_DIR)/libemlx.so
