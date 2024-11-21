@@ -233,11 +233,11 @@ defmodule EMLX.Backend do
         _right_batched_axes
       ) do
     left_tx = from_nx(left)
-    right_tx = from_nx(right) |> IO.inspect(label: "right_tx before to_typed")
+    right_tx = from_nx(right)
 
     EMLX.tensordot(
-      to_typed_ref(left_tx, left_type, out_type) |> IO.inspect(label: "left_tx"),
-      to_typed_ref(right_tx, right_type, out_type) |> IO.inspect(label: "right_tx"),
+      to_typed_ref(left_tx, left_type, out_type),
+      to_typed_ref(right_tx, right_type, out_type),
       left_axes,
       right_axes
     )
