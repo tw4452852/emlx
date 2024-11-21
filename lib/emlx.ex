@@ -40,8 +40,23 @@ defmodule EMLX do
   def tensordot({device, refA} = tensorA, {_, refB} = tensorB, axes_a, axes_b),
     do: NIF.tensordot(refA, refB, axes_a, axes_b, device) |> unwrap_tensor!(device)
 
+  def abs({device, ref} = tensor),
+    do: NIF.abs(ref, device) |> unwrap_tensor!(device)
+
+  def add({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.add(refA, refB, device) |> unwrap_tensor!(device)
+
+  def subtract({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.subtract(refA, refB, device) |> unwrap_tensor!(device)
+
   def multiply({device, refA} = tensorA, {_, refB} = tensorB),
     do: NIF.multiply(refA, refB, device) |> unwrap_tensor!(device)
+
+  def equal({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.equal(refA, refB, device) |> unwrap_tensor!(device)
+
+  def less_equal({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.less_equal(refA, refB, device) |> unwrap_tensor!(device)
 
   def reshape({device, ref}, shape),
     do: NIF.reshape(ref, shape, device) |> unwrap_tensor!(device)

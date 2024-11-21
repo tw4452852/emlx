@@ -60,7 +60,27 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def abs(_tensor, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def add(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def subtract(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def multiply(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def equal(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def less_equal(_a, _b, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

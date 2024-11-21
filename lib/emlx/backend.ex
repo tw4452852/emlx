@@ -18,8 +18,7 @@ defmodule EMLX.Backend do
     device_ref
   end
 
-  # FIXME: Do we need this case? In MLX, with unified memory, I think we will always have a device ref
-  # def from_nx(%T{} = tensor), do: Nx.backend_transfer(tensor, Backend) |> from_nx()
+  def from_nx(%T{} = other_backend), do: Nx.backend_transfer(other_backend, Backend) |> from_nx()
 
   @doc """
   Converts an MLX array back to an Nx tensor.
@@ -246,8 +245,33 @@ defmodule EMLX.Backend do
   end
 
   @impl true
+  def abs(%T{} = out, %T{} = tensor) do
+    EMLX.abs(from_nx(tensor)) |> to_nx(out)
+  end
+
+  @impl true
+  def add(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.add(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
+  def subtract(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.subtract(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
   def multiply(%T{} = out, %T{} = a, %T{} = b) do
     EMLX.multiply(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
+  def equal(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.equal(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
+  def less_equal(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.less_equal(from_nx(a), from_nx(b)) |> to_nx(out)
   end
 
   @impl true
