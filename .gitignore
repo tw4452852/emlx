@@ -24,3 +24,4 @@ emlx-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+/cache
