@@ -1,5 +1,6 @@
 # Private configuration
 PRIV_DIR = $(MIX_APP_PATH)/priv
+BUILD_DIR = cache/emlx-$(EMLX_VERSION)/objs
 EMLX_SO = $(PRIV_DIR)/libemlx.so
 EMLX_LIB_DIR = $(PRIV_DIR)/mlx/lib
 
@@ -20,29 +21,32 @@ endif
 
 # Source files
 SOURCES = c_src/emlx_nif.cpp
-OBJECTS = $(patsubst c_src/%.cpp,$(PRIV_DIR)/%.o,$(SOURCES))
+OBJECTS = $(patsubst c_src/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
 
 # Main targets
 all: $(EMLX_SO)
 
-$(PRIV_DIR)/%.o: c_src/%.cpp
+$(PRIV_DIR):
 	@ mkdir -p $(PRIV_DIR)
+
+$(BUILD_DIR)/%.o: c_src/%.cpp
+	@ mkdir -p $(BUILD_DIR)
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-$(EMLX_SO): $(OBJECTS)
-	@ mkdir -p $(PRIV_DIR)
+$(EMLX_SO): $(PRIV_DIR) $(OBJECTS)
 	@ echo "Copying MLX library to $(EMLX_LIB_DIR)"
 	@ mkdir -p $(EMLX_LIB_DIR)
+	@ echo "MIX_BUILD_EMBEDDED: $(MIX_BUILD_EMBEDDED)"
 	@ if [ "${MIX_BUILD_EMBEDDED}" = "true" ]; then \
-		cp -a $(MLX_LIB_DIR) $(EMLX_LIB_DIR) ; \
+		cp -a $(MLX_LIB_DIR)/* $(EMLX_LIB_DIR) ; \
 	else \
-		ln -sf ../$(MLX_LIB_DIR) $(EMLX_LIB_DIR) ; \
+		rm -rf $(EMLX_LIB_DIR) ; \
+		ln -sf $(MLX_LIB_DIR) $(EMLX_LIB_DIR) ; \
 	fi
-	cp $(MLX_LIB_DIR)/libmlx.dylib $(EMLX_LIB_DIR)/
-	cp $(MLX_LIB_DIR)/mlx.metallib $(EMLX_LIB_DIR)/
 	$(CXX) $(OBJECTS) -o $(EMLX_SO) $(LDFLAGS)
 
 clean:
 	rm -rf $(PRIV_DIR)
+	rm -rf $(BUILD_DIR)
 
 .PHONY: all clean
