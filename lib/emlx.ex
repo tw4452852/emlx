@@ -55,8 +55,14 @@ defmodule EMLX do
   def equal({device, refA} = tensorA, {_, refB} = tensorB),
     do: NIF.equal(refA, refB, device) |> unwrap_tensor!(device)
 
+  def not_equal({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.not_equal(refA, refB, device) |> unwrap_tensor!(device)
+
   def less_equal({device, refA} = tensorA, {_, refB} = tensorB),
     do: NIF.less_equal(refA, refB, device) |> unwrap_tensor!(device)
+
+  def greater_equal({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.greater_equal(refA, refB, device) |> unwrap_tensor!(device)
 
   def reshape({device, ref}, shape),
     do: NIF.reshape(ref, shape, device) |> unwrap_tensor!(device)

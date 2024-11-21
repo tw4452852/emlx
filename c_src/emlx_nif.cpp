@@ -432,6 +432,8 @@ BINARY_OP(add)
 BINARY_OP(subtract)
 BINARY_OP(multiply)
 BINARY_OP(equal)
+BINARY_OP(not_equal)
+BINARY_OP(greater_equal)
 BINARY_OP(less_equal)
 
 static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
@@ -453,6 +455,8 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"subtract", 3, subtract},
                                  {"multiply", 3, multiply},
                                  {"equal", 3, equal},
+                                 {"not_equal", 3, not_equal},
+                                 {"greater_equal", 3, greater_equal},
                                  {"less_equal", 3, less_equal}};
 
 // Update the NIF initialization

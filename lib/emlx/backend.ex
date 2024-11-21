@@ -270,6 +270,16 @@ defmodule EMLX.Backend do
   end
 
   @impl true
+  def not_equal(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.not_equal(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
+  def greater_equal(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.greater_equal(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
   def less_equal(%T{} = out, %T{} = a, %T{} = b) do
     EMLX.less_equal(from_nx(a), from_nx(b)) |> to_nx(out)
   end
