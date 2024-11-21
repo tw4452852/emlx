@@ -1,8 +1,5 @@
-defmodule EmlxTest do
+defmodule EMLXTest do
   use ExUnit.Case
-  doctest Emlx
+  doctest EMLX
 
-  test "greets the world" do
-    assert Emlx.hello() == :world
-  end
 end
