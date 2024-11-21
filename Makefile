@@ -36,13 +36,13 @@ $(BUILD_DIR)/%.o: c_src/%.cpp
 $(EMLX_SO): $(PRIV_DIR) $(OBJECTS)
 	@ echo "Copying MLX library to $(EMLX_LIB_DIR)"
 	@ mkdir -p $(EMLX_LIB_DIR)
+	@ echo "MIX_BUILD_EMBEDDED: $(MIX_BUILD_EMBEDDED)"
 	@ if [ "${MIX_BUILD_EMBEDDED}" = "true" ]; then \
-		cp -a $(MLX_LIB_DIR) $(EMLX_LIB_DIR) ; \
+		cp -a $(MLX_LIB_DIR)/* $(EMLX_LIB_DIR) ; \
 	else \
-		ln -sf ../$(MLX_LIB_DIR) $(EMLX_LIB_DIR) ; \
+		rm -rf $(EMLX_LIB_DIR) ; \
+		ln -sf $(MLX_LIB_DIR) $(EMLX_LIB_DIR) ; \
 	fi
-	cp $(MLX_LIB_DIR)/libmlx.dylib $(EMLX_LIB_DIR)/
-	cp $(MLX_LIB_DIR)/mlx.metallib $(EMLX_LIB_DIR)/
 	$(CXX) $(OBJECTS) -o $(EMLX_SO) $(LDFLAGS)
 
 clean:

@@ -1,11 +1,14 @@
 defmodule EMLX.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     libmlx_dir = libmlx_config().dir
+
     [
       app: :emlx,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -13,7 +16,9 @@ defmodule EMLX.MixProject do
       # elixir_make
       make_env: %{
         "MLX_INCLUDE_DIR" => Path.join(libmlx_dir, "include"),
-        "MLX_LIB_DIR" => Path.join(libmlx_dir, "lib")
+        "MLX_LIB_DIR" => Path.join(libmlx_dir, "lib"),
+        "EMLX_VERSION" => @version,
+        "MIX_BUILD_EMBEDDED" => "#{Mix.Project.config()[:build_embedded]}"
       },
 
       # Compilers
@@ -101,8 +106,11 @@ defmodule EMLX.MixProject do
       end
 
       expected_checksum = hd(checksum)
+
       if expected_checksum != libmlx_archive_checksum do
-        Mix.raise("Checksum mismatch for #{libmlx_archive}. Expected: #{expected_checksum}, got: #{libmlx_archive_checksum}")
+        Mix.raise(
+          "Checksum mismatch for #{libmlx_archive}. Expected: #{expected_checksum}, got: #{libmlx_archive_checksum}"
+        )
       end
     end
 
@@ -218,7 +226,9 @@ defmodule EMLX.MixProject do
         Base.encode16(:crypto.hash(:sha256, content), case: :lower)
 
       {:error, reason} ->
-        Mix.raise("Cannot read the file for checksum comparison: #{file_path}. Reason: #{inspect(reason)}")
+        Mix.raise(
+          "Cannot read the file for checksum comparison: #{file_path}. Reason: #{inspect(reason)}"
+        )
     end
   end
 end
