@@ -68,7 +68,7 @@ defmodule EMLX.Macro do
       def unquote(name)(unquote_splicing(args)) do
         {unquote(tensors), device} = prepare_tensors!(unquote(tensors))
 
-        EMLX.NIF.unquote(name)(unquote_splicing(args), device)
+        EMLX.NIF.unquote(name)(unquote_splicing(args ++ extra))
         |> unquote(unwrapper)(unquote_splicing(extra))
       end
     end
@@ -117,43 +117,29 @@ defmodule EMLX do
   def zeros(shape, type, device), do: NIF.zeros(shape, type, device) |> unwrap_tensor!(device)
 
   ## Non-dirty non-tensor return values
-  def scalar_type({device, ref}) when is_tensor(device, ref),
-    do: NIF.scalar_type(ref) |> unwrap!()
-
-  def shape({device, ref}) when is_tensor(device, ref),
-    do: NIF.shape(ref) |> unwrap!()
-
-  def to_blob({device, ref}) when is_tensor(device, ref),
-    do: NIF.to_blob(ref) |> unwrap!()
 
   def to_type({device, ref}, type) when is_tensor(device, ref),
     do: NIF.to_type(ref, type) |> unwrap_tensor!(device)
 
-  def to_blob({device, ref}, limit) when is_tensor(device, ref),
-    do: NIF.to_blob(ref, limit) |> unwrap!()
-
-  def from_blob(shape, type, binary, device),
-    do: NIF.from_blob(shape, type, binary) |> unwrap_tensor!(device)
+  # def from_blob(shape, type, binary, device),
+  #   do: NIF.from_blob(shape, type, binary) |> unwrap_tensor!(device)
 
   def scalar_tensor(value, type, device),
     do: NIF.scalar_tensor(value, type) |> unwrap_tensor!(device)
 
-  def sum({device, ref}, axes, keep_dims, result_type) when is_tensor(device, ref) do
-    NIF.sum(ref, axes, keep_dims, result_type) |> unwrap_tensor!(device)
-  end
-
-  def eye(m, n, type, device), do: NIF.eye(m, n, type, device) |> unwrap_tensor!(device)
-
-  def broadcast_to({device, ref}, shape),
-    do: NIF.broadcast_to(ref, shape, device) |> unwrap_tensor!(device)
-
   def tensordot({device, refA} = tensorA, {_, refB} = tensorB, axes_a, axes_b),
     do: NIF.tensordot(refA, refB, axes_a, axes_b, device) |> unwrap_tensor!(device)
 
-  deftensor abs(tensor)
-  deftensor reshape(tensor, shape)
+  ## Creation / conversion
+  def eye(size, type, device), do: eye(size, size, type, device)
+  defdevice eye(m, n, type, device)
+  defdevice from_blob(blob, shape, type, device)
 
-  # Binary ops
+  ## Manipulation
+  deftensor reshape(tensor, shape)
+  deftensor broadcast_to(tensor, shape)
+
+  ## Binary ops
   deftensor add(tensorA, tensorB)
   deftensor subtract(tensorA, tensorB)
   deftensor multiply(tensorA, tensorB)
@@ -161,6 +147,19 @@ defmodule EMLX do
   deftensor not_equal(tensorA, tensorB)
   deftensor less_equal(tensorA, tensorB)
   deftensor greater_equal(tensorA, tensorB)
+
+  ## Unary ops
+  deftensor abs(tensor)
+
+  ## Aggregation
+
+  deftensor sum(tensor, axes, keep_axes)
+
+  ## Dirty non-tensor return values
+  defvalue to_blob(tensor)
+  defvalue to_blob(tensor, limit)
+  defvalue scalar_type(tensor)
+  defvalue shape(tensor)
 
   defp unwrap!(:ok), do: :ok
   defp unwrap!({:ok, result}), do: result

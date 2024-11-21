@@ -190,7 +190,7 @@ NIF(sum) {
   TENSOR_PARAM(0, t);
   LIST_PARAM(1, std::vector<int>, axes);
   PARAM(2, bool, keep_dims);
-  TYPE_PARAM(3, result_type);
+  DEVICE_PARAM(3, device);
 
   // If axes is empty, sum over all dimensions
   // MLX sums over all dimensions ONLY if axes is not specified.
@@ -201,8 +201,7 @@ NIF(sum) {
     }
   }
 
-  auto result =
-      mlx::core::sum(mlx::core::astype(*t, result_type), axes, keep_dims);
+  auto result = mlx::core::sum(*t, axes, keep_dims, device);
 
   TENSOR(result);
 }
@@ -311,6 +310,7 @@ NIF(from_blob) {
   BINARY_PARAM(0, blob);
   SHAPE_PARAM(1, shape);
   TYPE_PARAM(2, type);
+  // DEVICE_PARAM(3, device);
 
   if (blob.size / dtype_sizes[type_atom] < elem_count(shape))
     return nx::nif::error(env,
@@ -378,12 +378,12 @@ NIF(tensordot) {
 
 #define UNARY_OP(OP) UNARY_OP2(OP, OP)
 
-#define UNARY_OP2(OP, NATIVE_OP)                                              \
+#define UNARY_OP2(OP, NATIVE_OP)                                               \
   NIF(OP) {                                                                    \
-    TENSOR_PARAM(0, tensor);                                                        \
+    TENSOR_PARAM(0, tensor);                                                   \
     DEVICE_PARAM(1, device);                                                   \
                                                                                \
-    TENSOR(mlx::core::NATIVE_OP(*tensor, device));                              \
+    TENSOR(mlx::core::NATIVE_OP(*tensor, device));                             \
   }
 
 /* Binary Ops */
@@ -443,7 +443,7 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"to_type", 2, to_type},
                                  {"to_blob", 1, to_blob},
                                  {"to_blob", 2, to_blob},
-                                 {"from_blob", 3, from_blob},
+                                 {"from_blob", 4, from_blob},
                                  {"scalar_tensor", 2, scalar_tensor},
                                  {"ones", 3, ones},
                                  {"zeros", 3, zeros},

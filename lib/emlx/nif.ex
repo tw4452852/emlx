@@ -23,7 +23,7 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def sum(_array, _axes, _keep_dims, _result_type) do
+  def sum(_array, _axes, _keep_dims, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 
@@ -48,7 +48,7 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def from_blob(_shape, _type, _binary) do
+  def from_blob(_shape, _type, _binary, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

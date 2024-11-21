@@ -190,7 +190,7 @@ defmodule EMLX.Backend do
   # end
 
   @impl true
-  def sum(%T{type: type} = out, %T{} = t, opts) do
+  def sum(%T{} = out, %T{} = t, opts) do
     axes = opts[:axes] || []
     keep_axes = opts[:keep_axes] || false
 
@@ -198,7 +198,8 @@ defmodule EMLX.Backend do
     result =
       t
       |> from_nx()
-      |> EMLX.sum(axes, keep_axes, nx_type_to_mlx(type))
+      |> EMLX.sum(axes, keep_axes)
+      |> EMLX.to_type(nx_type_to_mlx(out.type))
 
     # Get the actual shape after summation
     actual_shape = EMLX.shape(result)
