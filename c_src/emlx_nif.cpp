@@ -374,6 +374,18 @@ NIF(tensordot) {
   TENSOR(mlx::core::tensordot(*a, *b, axes1, axes2, device));
 }
 
+/* Unary Ops */
+
+#define UNARY_OP(OP) UNARY_OP2(OP, OP)
+
+#define UNARY_OP2(OP, NATIVE_OP)                                              \
+  NIF(OP) {                                                                    \
+    TENSOR_PARAM(0, tensor);                                                        \
+    DEVICE_PARAM(1, device);                                                   \
+                                                                               \
+    TENSOR(mlx::core::NATIVE_OP(*tensor, device));                              \
+  }
+
 /* Binary Ops */
 
 #define BINARY_OP(OP) BINARY_OP2(OP, OP)
@@ -415,7 +427,12 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
   return 0;
 }
 
+UNARY_OP(abs)
+BINARY_OP(add)
+BINARY_OP(subtract)
 BINARY_OP(multiply)
+BINARY_OP(equal)
+BINARY_OP(less_equal)
 
 static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"sum", 4, sum},
@@ -431,7 +448,12 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"eye", 4, eye},
                                  {"broadcast_to", 3, broadcast_to},
                                  {"tensordot", 5, tensordot},
-                                 {"multiply", 3, multiply}};
+                                 {"abs", 2, abs},
+                                 {"add", 3, add},
+                                 {"subtract", 3, subtract},
+                                 {"multiply", 3, multiply},
+                                 {"equal", 3, equal},
+                                 {"less_equal", 3, less_equal}};
 
 // Update the NIF initialization
 ERL_NIF_INIT(Elixir.EMLX.NIF, nif_funcs, load, NULL, NULL, NULL)
