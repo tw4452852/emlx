@@ -1,6 +1,8 @@
 #include "erl_nif.h"
+#include "mlx/backend/common/utils.h"
 #include "mlx/mlx.h"
 #include "nx_nif_utils.hpp"
+
 #include <map>
 #include <numeric>
 #include <string>
@@ -232,6 +234,14 @@ NIF(zeros) {
   TENSOR(mlx::core::zeros(shape, type, device));
 }
 
+NIF(reshape) {
+  TENSOR_PARAM(0, t);
+  SHAPE_PARAM(1, shape);
+  DEVICE_PARAM(2, device);
+
+  TENSOR(mlx::core::reshape(*t, shape, device));
+}
+
 NIF(to_type) {
   TENSOR_PARAM(0, t);
   TYPE_PARAM(1, type);
@@ -253,33 +263,43 @@ NIF(to_blob) {
     byte_size = limit * t->itemsize();
   }
 
-  // flatten the tensor to compensate for operations which return
-  // a column-major tensor. t->flatten() is a no-op if the tensor
-  // is already row-major, which was verified by printing t->data_ptr
-  // and reshaped.data_ptr and confirming they had the same value.
-  // We also slice if a limit was received and it doesn't encompass the full
-  // tensor.
+  // Flatten and slice if needed
   mlx::core::array flattened = mlx::core::flatten(*t);
   mlx::core::array reshaped =
       (has_received_limit && byte_size < t->nbytes())
-          ?
-          // We only care about slicing the first dimension
-          mlx::core::slice(flattened, std::vector<int>{0},
-                           std::vector<int>{limit})
+          ? mlx::core::slice(flattened, std::vector<int>{0},
+                             std::vector<int>{limit})
           : flattened;
 
-  // Evaluate the array to ensure data is available
+  // Evaluate to ensure data is available
   mlx::core::eval(reshaped);
 
-  // Get raw pointer to data
-  const void *data_ptr = reshaped.data<void>();
+  // Create result binary
+  void *result_data = (void *)enif_make_new_binary(env, byte_size, &result);
 
-  if (data_ptr == nullptr) {
-    return nx::nif::error(env, "Failed to get tensor data");
+  // The MLX array data may not be contiguous in memory, even after the
+  // reshape+flatten operations. See:
+  // https://github.com/ml-explore/mlx/discussions/1608#discussioncomment-11332071
+  //
+  // Set up contiguous iterator
+  std::vector<int> slice_sizes(reshaped.shape().begin(),
+                               reshaped.shape().end());
+  ContiguousIterator<size_t> iterator(slice_sizes, reshaped.strides(),
+                                      reshaped.ndim());
+
+  // Copy data element by element using iterator
+  size_t element_size = reshaped.itemsize();
+  const char *src_data = static_cast<const char *>(reshaped.data<void>());
+  char *dst_data = static_cast<char *>(result_data);
+
+  size_t num_elements = byte_size / element_size;
+  for (size_t i = 0; i < num_elements; i++) {
+    size_t src_offset = iterator.loc;
+    std::memcpy(dst_data + (i * element_size),
+                src_data + (src_offset * element_size), element_size);
+    iterator.step();
   }
 
-  void *result_data = (void *)enif_make_new_binary(env, byte_size, &result);
-  memcpy(result_data, data_ptr, byte_size);
   return nx::nif::ok(env, result);
 }
 
@@ -354,6 +374,19 @@ NIF(tensordot) {
   TENSOR(mlx::core::tensordot(*a, *b, axes1, axes2, device));
 }
 
+/* Binary Ops */
+
+#define BINARY_OP(OP) BINARY_OP2(OP, OP)
+
+#define BINARY_OP2(OP, NATIVE_OP)                                              \
+  NIF(OP) {                                                                    \
+    TENSOR_PARAM(0, a);                                                        \
+    TENSOR_PARAM(1, b);                                                        \
+    DEVICE_PARAM(2, device);                                                   \
+                                                                               \
+    TENSOR(mlx::core::NATIVE_OP(*a, *b, device));                              \
+  }
+
 static void free_tensor(ErlNifEnv *env, void *obj) {
   mlx::core::array *arr = static_cast<mlx::core::array *>(obj);
   if (arr != nullptr) {
@@ -382,21 +415,23 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
   return 0;
 }
 
-static ErlNifFunc nif_funcs[] = {
-    {"scalar_type", 1, scalar_type},
-    {"sum", 4, sum},
-    {"shape", 1, shape},
-    {"to_type", 2, to_type},
-    {"to_blob", 1, to_blob},
-    {"to_blob", 2, to_blob},
-    {"from_blob", 3, from_blob},
-    {"scalar_tensor", 2, scalar_tensor},
-    {"ones", 3, ones},
-    {"zeros", 3, zeros},
-    {"eye", 4, eye},
-    {"broadcast_to", 3, broadcast_to},
-    {"tensordot", 5, tensordot},
-};
+BINARY_OP(multiply)
+
+static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
+                                 {"sum", 4, sum},
+                                 {"shape", 1, shape},
+                                 {"reshape", 3, reshape},
+                                 {"to_type", 2, to_type},
+                                 {"to_blob", 1, to_blob},
+                                 {"to_blob", 2, to_blob},
+                                 {"from_blob", 3, from_blob},
+                                 {"scalar_tensor", 2, scalar_tensor},
+                                 {"ones", 3, ones},
+                                 {"zeros", 3, zeros},
+                                 {"eye", 4, eye},
+                                 {"broadcast_to", 3, broadcast_to},
+                                 {"tensordot", 5, tensordot},
+                                 {"multiply", 3, multiply}};
 
 // Update the NIF initialization
 ERL_NIF_INIT(Elixir.EMLX.NIF, nif_funcs, load, NULL, NULL, NULL)

@@ -40,6 +40,12 @@ defmodule EMLX do
   def tensordot({device, refA} = tensorA, {_, refB} = tensorB, axes_a, axes_b),
     do: NIF.tensordot(refA, refB, axes_a, axes_b, device) |> unwrap_tensor!(device)
 
+  def multiply({device, refA} = tensorA, {_, refB} = tensorB),
+    do: NIF.multiply(refA, refB, device) |> unwrap_tensor!(device)
+
+  def reshape({device, ref}, shape),
+    do: NIF.reshape(ref, shape, device) |> unwrap_tensor!(device)
+
   defp unwrap!(:ok), do: :ok
   defp unwrap!({:ok, result}), do: result
   defp unwrap!({:error, error}), do: raise("EMLX: " <> List.to_string(error))

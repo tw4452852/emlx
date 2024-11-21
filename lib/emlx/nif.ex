@@ -35,6 +35,11 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def reshape(_array, _shape, _type) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+
   def to_blob(_array) do
     :erlang.nif_error(:nif_not_loaded)
   end
@@ -55,10 +60,13 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def multiply(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   @on_load :load_nifs
   def load_nifs do
     path = :filename.join(:code.priv_dir(:emlx), ~c"libemlx")
     :erlang.load_nif(path, 0)
   end
-
 end

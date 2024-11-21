@@ -245,6 +245,46 @@ defmodule EMLX.Backend do
     |> to_nx(out)
   end
 
+  @impl true
+  def multiply(%T{} = out, %T{} = a, %T{} = b) do
+    EMLX.multiply(from_nx(a), from_nx(b)) |> to_nx(out)
+  end
+
+  @impl true
+  def reshape(%T{shape: shape} = out, %T{} = t),
+    do: EMLX.reshape(from_nx(t), shape) |> to_nx(out)
+
+  @impl true
+  def broadcast(out, %T{} = t, shape, axes) do
+    t
+    |> maybe_reshape(shape, axes)
+    |> from_nx()
+    |> EMLX.broadcast_to(shape)
+    |> to_nx(out)
+  end
+
+  defp maybe_reshape(%T{shape: {}} = t, target_shape, _axes) do
+    shape = 1 |> List.duplicate(tuple_size(target_shape)) |> List.to_tuple()
+    Nx.reshape(t, shape)
+  end
+
+  defp maybe_reshape(%T{shape: shape} = t, target_shape, axes) do
+    base_broadcast_shape = 1 |> List.duplicate(tuple_size(target_shape)) |> List.to_tuple()
+
+    new_shape =
+      shape
+      |> Tuple.to_list()
+      |> Enum.zip(axes)
+      |> Enum.reduce(base_broadcast_shape, fn {dim_size, target_axis}, shape_acc ->
+        shape_acc
+        |> Tuple.delete_at(target_axis)
+        |> Tuple.insert_at(target_axis, dim_size)
+      end)
+
+    Nx.reshape(t, new_shape)
+  end
+
+
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
   defp constant_serialize_scalar(%Complex{} = c), do: Complex.abs(c)
