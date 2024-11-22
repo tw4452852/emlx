@@ -43,6 +43,29 @@ defmodule EMLX.Backend do
   end
 
   @impl true
+  def backend_copy(%T{type: type, shape: shape} = tensor, Nx.BinaryBackend, opts) do
+    Nx.from_binary(to_binary(tensor, Nx.size(tensor)), type, opts)
+    |> Nx.reshape(shape)
+  end
+
+  def backend_copy(%T{type: type, shape: shape} = tensor, backend, opts) do
+    backend.from_binary(to_binary(tensor, Nx.size(tensor)), type, opts)
+    |> Nx.reshape(shape)
+  end
+
+  @impl true
+  def backend_transfer(tensor, backend, opts) do
+    new_tensor = backend_copy(tensor, backend, opts)
+    backend_deallocate(tensor)
+    new_tensor
+  end
+
+  @impl true
+  def backend_deallocate(%T{data: %Backend{ref: ref}}) do
+    EMLX.deallocate(ref)
+  end
+
+  @impl true
   def inspect(%T{} = tensor, inspect_opts) do
     limit = if inspect_opts.limit == :infinity, do: :infinity, else: inspect_opts.limit + 1
 
@@ -247,12 +270,18 @@ defmodule EMLX.Backend do
     |> to_nx(out)
   end
 
-  @impl true
-  def abs(%T{} = out, %T{} = tensor) do
-    EMLX.abs(from_nx(tensor)) |> to_nx(out)
+  # Unary Ops
+
+  ops = [:abs, :ceil, :conjugate, :floor, :negate, :round, :sign, :real, :imag, :logical_not]
+
+  for op <- ops do
+    @impl true
+    def unquote(op)(out, tensor) do
+      EMLX.unquote(op)(from_nx(tensor)) |> to_nx(out)
+    end
   end
 
-  # Ops
+  # Binary Ops
 
   ops = [:add, :subtract, :multiply, :pow, :left_shift]
 
@@ -280,9 +309,10 @@ defmodule EMLX.Backend do
     do: tensor
 
   ops =
-    [:min, :max, :divide, :quotient, :atan2] ++
+    [:min, :max, :divide, :quotient, :remainder, :atan2] ++
       [:right_shift, :logical_and, :logical_or, :logical_xor] ++
-      [:equal, :not_equal, :greater, :less, :greater_equal, :less_equal]
+      [:equal, :not_equal, :greater, :less, :greater_equal, :less_equal] ++
+      [:bitwise_and, :bitwise_or, :bitwise_xor]
 
   for op <- ops do
     @impl true
