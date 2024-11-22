@@ -43,6 +43,30 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def argmax(_array, _axes, _keep_dims, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def argmin(_array, _axes, _keep_dims, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def cumulative_sum(_array, _axis, _reverse, _inclusive, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def cumulative_product(_array, _axis, _reverse, _inclusive, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def cumulative_max(_array, _axis, _reverse, _inclusive, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def cumulative_min(_array, _axis, _reverse, _inclusive, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def shape(_array) do
     :erlang.nif_error(:nif_not_loaded)
   end

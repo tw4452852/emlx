@@ -196,6 +196,12 @@ defmodule EMLX do
   deftensor any(tensor, axes, keep_axes)
   deftensor sum(tensor, axes, keep_axes)
   deftensor product(tensor, axes, keep_axes)
+  deftensor argmax(tensor, axes, keep_axes)
+  deftensor argmin(tensor, axes, keep_axes)
+  deftensor cumulative_sum(tensor, axis, reverse, inclusive)
+  deftensor cumulative_product(tensor, axis, reverse, inclusive)
+  deftensor cumulative_max(tensor, axis, reverse, inclusive)
+  deftensor cumulative_min(tensor, axis, reverse, inclusive)
 
   ## Dirty non-tensor return values
   defvalue to_blob(tensor)

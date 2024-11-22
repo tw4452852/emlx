@@ -250,7 +250,7 @@ defmodule EMLX.Backend do
     EMLX.broadcast_to(aten, shape) |> to_nx(out)
   end
 
-  # Aggregation
+  # Aggregation (axes)
   ops = [:all, :any, :sum, :product]
 
   for op <- ops do
@@ -264,6 +264,58 @@ defmodule EMLX.Backend do
         tensor
         |> from_nx()
         |> EMLX.unquote(op)(axes, keep_axes)
+        |> EMLX.to_type(to_mlx_type(out.type))
+
+      # Get the actual shape after summation
+      actual_shape = EMLX.shape(result)
+      # FIXME: MLX returns whatever the original type is, but Nx expects u8 -> u32
+      scalar_type = EMLX.scalar_type(result)
+
+      # Create a new output tensor with the correct shape
+      %{out | shape: actual_shape}
+      |> then(&to_nx(result, &1))
+    end
+  end
+
+  # Aggregation (axis)
+  ops = [:argmax, :argmin]
+  for op <- ops do
+    @impl true
+    def unquote(op)(out, tensor, opts) do
+      axis = opts[:axis] || 0
+      keep_axes = opts[:keep_axes] || false
+
+      # Calculate the expected output shape based on the input shape and axes
+      result =
+        tensor
+        |> from_nx()
+        |> EMLX.unquote(op)(axis, keep_axes)
+        |> EMLX.to_type(to_mlx_type(out.type))
+
+      # Get the actual shape after summation
+      actual_shape = EMLX.shape(result)
+      # FIXME: MLX returns whatever the original type is, but Nx expects u8 -> u32
+      scalar_type = EMLX.scalar_type(result)
+
+      # Create a new output tensor with the correct shape
+      %{out | shape: actual_shape}
+      |> then(&to_nx(result, &1))
+    end
+  end
+
+  ops = [:cumulative_sum, :cumulative_product, :cumulative_max, :cumulative_min]
+  for op <- ops do
+    @impl true
+    def unquote(op)(out, tensor, opts) do
+      axis = opts[:axis] || 0
+      reverse = opts[:reverse] || false
+
+      # Calculate the expected output shape based on the input shape and axes
+      inclusive = true
+      result =
+        tensor
+        |> from_nx()
+        |> EMLX.unquote(op)(axis, reverse, inclusive)
         |> EMLX.to_type(to_mlx_type(out.type))
 
       # Get the actual shape after summation
