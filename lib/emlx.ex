@@ -141,6 +141,7 @@ defmodule EMLX do
   deftensor right_shift(tensorA, tensorB)
   deftensor min(tensorA, tensorB)
   deftensor max(tensorA, tensorB)
+  deftensor quotient(tensorA, tensorB)
   deftensor equal(tensorA, tensorB)
   deftensor not_equal(tensorA, tensorB)
   deftensor greater(tensorA, tensorB)

@@ -536,6 +536,7 @@ BINARY_OP2(divide, divide)
 BINARY_OP2(atan2, arctan2)
 BINARY_OP2(min, minimum)
 BINARY_OP2(max, maximum)
+BINARY_OP2(quotient, floor_divide)
 BINARY_OP(bitwise_and)
 BINARY_OP(bitwise_or)
 BINARY_OP(bitwise_xor)
@@ -595,6 +596,7 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"right_shift", 3, right_shift},
                                  {"min", 3, min},
                                  {"max", 3, max},
+                                 {"quotient", 3, quotient},
                                  {"equal", 3, equal},
                                  {"not_equal", 3, not_equal},
                                  {"greater", 3, greater},
