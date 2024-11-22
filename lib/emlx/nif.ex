@@ -72,6 +72,14 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def min(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def max(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def equal(_a, _b, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end

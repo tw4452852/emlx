@@ -128,6 +128,8 @@ defmodule EMLX do
   deftensor add(tensorA, tensorB)
   deftensor subtract(tensorA, tensorB)
   deftensor multiply(tensorA, tensorB)
+  deftensor min(tensorA, tensorB)
+  deftensor max(tensorA, tensorB)
   deftensor equal(tensorA, tensorB)
   deftensor not_equal(tensorA, tensorB)
   deftensor less_equal(tensorA, tensorB)

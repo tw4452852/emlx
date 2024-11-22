@@ -421,7 +421,6 @@ static int open_resource_type(ErlNifEnv *env) {
   return 0;
 }
 
-// In your module load function:
 static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
   if (open_resource_type(env) != 0) {
     return -1;
@@ -433,6 +432,24 @@ UNARY_OP(abs)
 BINARY_OP(add)
 BINARY_OP(subtract)
 BINARY_OP(multiply)
+
+// min and max in Nx correspond to `minimum` and `maximum` in MLX
+NIF(min) {
+  TENSOR_PARAM(0, a);
+  TENSOR_PARAM(0, b);
+
+  DEVICE_PARAM(2, device);
+  TENSOR(mlx::core::minimum(*a, *b, device));
+}
+
+NIF(max) {
+  TENSOR_PARAM(0, a);
+  TENSOR_PARAM(0, b);
+
+  DEVICE_PARAM(2, device);
+  TENSOR(mlx::core::maximum(*a, *b, device));
+}
+
 BINARY_OP(equal)
 BINARY_OP(not_equal)
 BINARY_OP(greater_equal)
@@ -455,6 +472,8 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"add", 3, add},
                                  {"subtract", 3, subtract},
                                  {"multiply", 3, multiply},
+                                 {"min", 3, min},
+                                 {"max", 3, max},
                                  {"equal", 3, equal},
                                  {"not_equal", 3, not_equal},
                                  {"greater_equal", 3, greater_equal},
