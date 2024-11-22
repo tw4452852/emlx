@@ -195,77 +195,6 @@ NIF(scalar_type) {
     return nx::nif::error(env, "Could not determine tensor type.");
 }
 
-NIF(all) {
-  TENSOR_PARAM(0, t);
-  LIST_PARAM(1, std::vector<int>, axes);
-  PARAM(2, bool, keep_dims);
-  DEVICE_PARAM(3, device);
-
-  if (axes.empty()) {
-    for (int i = 0; i < t->ndim(); ++i) {
-      axes.push_back(i);
-    }
-  }
-
-  auto result = mlx::core::all(*t, axes, keep_dims, device);
-
-  TENSOR(result);
-}
-
-NIF(any) {
-  TENSOR_PARAM(0, t);
-  LIST_PARAM(1, std::vector<int>, axes);
-  PARAM(2, bool, keep_dims);
-  DEVICE_PARAM(3, device);
-
-  if (axes.empty()) {
-    for (int i = 0; i < t->ndim(); ++i) {
-      axes.push_back(i);
-    }
-  }
-
-  auto result = mlx::core::any(*t, axes, keep_dims, device);
-
-  TENSOR(result);
-}
-
-NIF(sum) {
-  TENSOR_PARAM(0, t);
-  LIST_PARAM(1, std::vector<int>, axes);
-  PARAM(2, bool, keep_dims);
-  DEVICE_PARAM(3, device);
-
-  // If axes is empty, sum over all dimensions
-  // MLX sums over all dimensions ONLY if axes is not specified.
-  // If an empty vector is passed, it will not sum over any dimensions.
-  if (axes.empty()) {
-    for (int i = 0; i < t->ndim(); ++i) {
-      axes.push_back(i);
-    }
-  }
-
-  auto result = mlx::core::sum(*t, axes, keep_dims, device);
-
-  TENSOR(result);
-}
-
-NIF(product) {
-  TENSOR_PARAM(0, t);
-  LIST_PARAM(1, std::vector<int>, axes);
-  PARAM(2, bool, keep_dims);
-  DEVICE_PARAM(3, device);
-
-  if (axes.empty()) {
-    for (int i = 0; i < t->ndim(); ++i) {
-      axes.push_back(i);
-    }
-  }
-
-  auto result = mlx::core::prod(*t, axes, keep_dims, device);
-
-  TENSOR(result);
-}
-
 NIF(shape) {
   TENSOR_PARAM(0, t);
 
@@ -462,6 +391,92 @@ NIF(tensordot) {
   TENSOR(mlx::core::tensordot(*a, *b, axes1, axes2, device));
 }
 
+/* Reduction Ops */
+
+#define REDUCTION_AXES_OP(OP) REDUCTION_AXES_OP2(OP, OP)
+
+#define REDUCTION_AXES_OP2(OP, NATIVE_OP)                                      \
+  NIF(OP) {                                                                    \
+    TENSOR_PARAM(0, tensor);                                                   \
+    LIST_PARAM(1, std::vector<int>, axes);                                     \
+    PARAM(2, bool, keep_dims);                                                 \
+    DEVICE_PARAM(3, device);                                                   \
+                                                                               \
+    if (axes.empty()) {                                                        \
+      for (int i = 0; i < tensor->ndim(); ++i) {                               \
+        axes.push_back(i);                                                     \
+      }                                                                        \
+    }                                                                          \
+    TENSOR(mlx::core::NATIVE_OP(*tensor, axes, keep_dims, device));            \
+  }
+
+#define REDUCTION_AXIS_OP(OP) REDUCTION_AXIS_OP2(OP, OP)
+
+#define REDUCTION_AXIS_OP2(OP, NATIVE_OP)                                      \
+  NIF(OP) {                                                                    \
+    TENSOR_PARAM(0, tensor);                                                   \
+    PARAM(1, int, axis);                                                       \
+    PARAM(2, bool, keep_dims);                                                 \
+    DEVICE_PARAM(3, device);                                                   \
+                                                                               \
+    TENSOR(mlx::core::NATIVE_OP(*tensor, axis, keep_dims, device));            \
+  }
+
+#define REDUCTION_AXIS_REVERSIBLE_OP(OP) REDUCTION_AXIS_REVERSIBLE_OP2(OP, OP)
+
+#define REDUCTION_AXIS_REVERSIBLE_OP2(OP, NATIVE_OP)                                      \
+  NIF(OP) {                                                                    \
+    TENSOR_PARAM(0, tensor);                                                   \
+    PARAM(1, int, axis);                                                       \
+    PARAM(2, bool, keep_dims);                                                 \
+    DEVICE_PARAM(3, device);                                                   \
+                                                                               \
+    TENSOR(mlx::core::NATIVE_OP(*tensor, axis, keep_dims, device));            \
+  }
+
+REDUCTION_AXES_OP(all)
+REDUCTION_AXES_OP(any)
+REDUCTION_AXES_OP(sum)
+REDUCTION_AXES_OP2(product, prod)
+REDUCTION_AXIS_OP(argmax)
+REDUCTION_AXIS_OP(argmin)
+
+NIF(cumulative_sum) {
+  TENSOR_PARAM(0, tensor);
+  PARAM(1, int, axis);
+  PARAM(2, bool, reverse);
+  PARAM(3, bool, inclusive);
+  DEVICE_PARAM(4, device);
+  TENSOR(mlx::core::cumsum(*tensor, axis, reverse, inclusive, device));
+}
+
+NIF(cumulative_product) {
+  TENSOR_PARAM(0, tensor);
+  PARAM(1, int, axis);
+  PARAM(2, bool, reverse);
+  PARAM(3, bool, inclusive);
+  DEVICE_PARAM(4, device);
+  TENSOR(mlx::core::cumprod(*tensor, axis, reverse, inclusive, device));
+}
+
+NIF(cumulative_max) {
+  TENSOR_PARAM(0, tensor);
+  PARAM(1, int, axis);
+  PARAM(2, bool, reverse);
+  PARAM(3, bool, inclusive);
+  DEVICE_PARAM(4, device);
+  TENSOR(mlx::core::cummax(*tensor, axis, reverse, inclusive, device));
+}
+
+NIF(cumulative_min) {
+  TENSOR_PARAM(0, tensor);
+  PARAM(1, int, axis);
+  PARAM(2, bool, reverse);
+  PARAM(3, bool, inclusive);
+  DEVICE_PARAM(4, device);
+  TENSOR(mlx::core::cummin(*tensor, axis, reverse, inclusive, device));
+}
+
 /* Unary Ops */
 
 #define UNARY_OP(OP) UNARY_OP2(OP, OP)
@@ -578,6 +593,12 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"any", 4, any},
                                  {"sum", 4, sum},
                                  {"product", 4, product},
+                                 {"argmax", 4, argmax},
+                                 {"argmin", 4, argmin},
+                                 {"cumulative_sum", 5, cumulative_sum},
+                                 {"cumulative_product", 5, cumulative_product},
+                                 {"cumulative_max", 5, cumulative_max},
+                                 {"cumulative_min", 5, cumulative_min},
                                  {"shape", 1, shape},
                                  {"reshape", 3, reshape},
                                  {"to_type", 3, to_type},
@@ -608,6 +629,8 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"asinh", 2, asinh},
                                  {"cos", 2, cos},
                                  {"cosh", 2, cosh},
+                                 {"atan", 2, atan},
+                                 {"atanh", 2, atanh},
                                  {"erf", 2, erf},
                                  {"erf_inv", 2, erf_inv},
                                  {"exp", 2, exp},
