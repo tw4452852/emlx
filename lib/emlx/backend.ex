@@ -274,7 +274,7 @@ defmodule EMLX.Backend do
     do: EMLX.bitwise_and(tensor, EMLX.scalar_tensor(0xFFFF, :int, device))
 
   defp bitmask({device, _} = tensor, {:u, 32}),
-    do: EMLX.bitwise_and(tensor, EMLX.scalar_tensor(0xFFFF_FFFF, :long, device))
+    do: EMLX.bitwise_and(tensor, EMLX.scalar_tensor(0xFFFF_FFFF, :int64, device))
 
   defp bitmask(tensor, {_, _}),
     do: tensor
