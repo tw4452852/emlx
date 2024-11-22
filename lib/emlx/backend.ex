@@ -124,8 +124,8 @@ defmodule EMLX.Backend do
   defp to_mlx_type({:s, 64}), do: :int64
   defp to_mlx_type({:f, 16}), do: :float16
   defp to_mlx_type({:f, 32}), do: :float32
-  defp to_mlx_type({:bf, 16}), do: :float32
-  defp to_mlx_type(:bool), do: :bfloat16
+  defp to_mlx_type({:bf, 16}), do: :bfloat16
+  defp to_mlx_type(:bool), do: :bool
 
   defp to_nx_type(:uint8), do: {:u, 8}
   defp to_nx_type(:uint16), do: {:u, 16}
