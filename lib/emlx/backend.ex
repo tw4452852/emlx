@@ -31,7 +31,7 @@ defmodule EMLX.Backend do
     # Convert if needed (similar to the torch byte conversion)
     array =
       if needs_type_conversion?(type, mlx_type) do
-        EMLX.to_type(device_ref, nx_type_to_mlx(type))
+        EMLX.to_type(device_ref, to_mlx_type(type))
       else
         device_ref
       end
@@ -63,7 +63,7 @@ defmodule EMLX.Backend do
     |> maybe_pad_binary(type)
     |> EMLX.from_blob(
       shape,
-      nx_type_to_mlx(type),
+      to_mlx_type(type),
       device_option(backend_options)
     )
     |> to_nx(out)
@@ -96,35 +96,35 @@ defmodule EMLX.Backend do
   defp needs_type_conversion?({:u, 8}, :bool), do: true
   defp needs_type_conversion?(_, _), do: false
 
-  defp nx_type_to_mlx({:u, 8}), do: :uint8
-  defp nx_type_to_mlx({:u, 16}), do: :uint16
-  defp nx_type_to_mlx({:u, 32}), do: :uint32
-  defp nx_type_to_mlx({:u, 64}), do: :uint64
-  defp nx_type_to_mlx({:s, 8}), do: :int8
-  defp nx_type_to_mlx({:s, 16}), do: :int16
-  defp nx_type_to_mlx({:s, 32}), do: :int32
-  defp nx_type_to_mlx({:s, 64}), do: :int64
-  defp nx_type_to_mlx({:f, 16}), do: :float16
-  defp nx_type_to_mlx({:f, 32}), do: :float32
-  defp nx_type_to_mlx({:bf, 16}), do: :float32
-  defp nx_type_to_mlx(:bool), do: :bfloat16
+  defp to_mlx_type({:u, 8}), do: :uint8
+  defp to_mlx_type({:u, 16}), do: :uint16
+  defp to_mlx_type({:u, 32}), do: :uint32
+  defp to_mlx_type({:u, 64}), do: :uint64
+  defp to_mlx_type({:s, 8}), do: :int8
+  defp to_mlx_type({:s, 16}), do: :int16
+  defp to_mlx_type({:s, 32}), do: :int32
+  defp to_mlx_type({:s, 64}), do: :int64
+  defp to_mlx_type({:f, 16}), do: :float16
+  defp to_mlx_type({:f, 32}), do: :float32
+  defp to_mlx_type({:bf, 16}), do: :float32
+  defp to_mlx_type(:bool), do: :bfloat16
 
-  defp mlx_type_to_nx(:uint8), do: {:u, 8}
-  defp mlx_type_to_nx(:uint16), do: {:u, 16}
-  defp mlx_type_to_nx(:uint32), do: {:u, 32}
-  defp mlx_type_to_nx(:uint64), do: {:u, 64}
-  defp mlx_type_to_nx(:int8), do: {:s, 8}
-  defp mlx_type_to_nx(:int16), do: {:s, 16}
-  defp mlx_type_to_nx(:int32), do: {:s, 32}
-  defp mlx_type_to_nx(:int64), do: {:s, 64}
-  defp mlx_type_to_nx(:float16), do: {:f, 16}
-  defp mlx_type_to_nx(:float32), do: {:f, 32}
-  defp mlx_type_to_nx(:bfloat16), do: {:bf, 16}
-  defp mlx_type_to_nx(:bool), do: :bool
+  defp to_nx_type(:uint8), do: {:u, 8}
+  defp to_nx_type(:uint16), do: {:u, 16}
+  defp to_nx_type(:uint32), do: {:u, 32}
+  defp to_nx_type(:uint64), do: {:u, 64}
+  defp to_nx_type(:int8), do: {:s, 8}
+  defp to_nx_type(:int16), do: {:s, 16}
+  defp to_nx_type(:int32), do: {:s, 32}
+  defp to_nx_type(:int64), do: {:s, 64}
+  defp to_nx_type(:float16), do: {:f, 16}
+  defp to_nx_type(:float32), do: {:f, 32}
+  defp to_nx_type(:bfloat16), do: {:bf, 16}
+  defp to_nx_type(:bool), do: :bool
 
   defp check_shape_and_type!(device_ref, expected_shape, expected_type) do
     actual_shape = EMLX.shape(device_ref)
-    actual_type = EMLX.scalar_type(device_ref) |> mlx_type_to_nx()
+    actual_type = EMLX.scalar_type(device_ref) |> to_nx_type()
 
     if actual_shape != expected_shape do
       raise ArgumentError, """
@@ -179,7 +179,7 @@ defmodule EMLX.Backend do
   def constant(%T{shape: {}, type: type} = out, scalar, backend_options) do
     scalar
     |> constant_serialize_scalar()
-    |> EMLX.scalar_tensor(nx_type_to_mlx(type), device_option(backend_options))
+    |> EMLX.scalar_tensor(to_mlx_type(type), device_option(backend_options))
     |> to_nx(out)
   end
 
@@ -201,7 +201,7 @@ defmodule EMLX.Backend do
       t
       |> from_nx()
       |> EMLX.sum(axes, keep_axes)
-      |> EMLX.to_type(nx_type_to_mlx(out.type))
+      |> EMLX.to_type(to_mlx_type(out.type))
 
     # Get the actual shape after summation
     actual_shape = EMLX.shape(result)
@@ -219,7 +219,7 @@ defmodule EMLX.Backend do
     m = elem(shape, rank - 2)
     n = elem(shape, rank - 1)
 
-    EMLX.eye(m, n, nx_type_to_mlx(type), device_option(backend_options))
+    EMLX.eye(m, n, to_mlx_type(type), device_option(backend_options))
     |> EMLX.broadcast_to(shape)
     |> to_nx(out)
   end
@@ -265,7 +265,7 @@ defmodule EMLX.Backend do
 
       result
       |> bitmask(out.type)
-      |> EMLX.to_type(nx_type_to_mlx(out.type))
+      |> EMLX.to_type(to_mlx_type(out.type))
       |> to_nx(out)
     end
   end
@@ -291,7 +291,7 @@ defmodule EMLX.Backend do
       {left_tx, right_tx} = maybe_broadcast_bin_args(out.shape, left, right)
 
       EMLX.unquote(op)(left_tx, right_tx)
-      |> EMLX.to_type(nx_type_to_mlx(out.type))
+      |> EMLX.to_type(to_mlx_type(out.type))
       |> to_nx(out)
     end
   end
@@ -359,7 +359,7 @@ defmodule EMLX.Backend do
 
   @impl true
   def as_type(%T{type: type} = out, %T{} = t),
-    do: from_nx(t) |> EMLX.to_type(nx_type_to_mlx(type)) |> bitmask(type) |> to_nx(out)
+    do: from_nx(t) |> EMLX.to_type(to_mlx_type(type)) |> bitmask(type) |> to_nx(out)
 
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
@@ -369,7 +369,7 @@ defmodule EMLX.Backend do
     do: tensor
 
   defp to_typed_ref(tensor, ref_type, expected_type),
-    do: EMLX.to_type(tensor, nx_type_to_mlx(expected_type))
+    do: EMLX.to_type(tensor, to_mlx_type(expected_type))
 
   defp device_option(nil), do: :cpu
   defp device_option(backend_opts), do: backend_opts[:device] || :cpu
