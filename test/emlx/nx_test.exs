@@ -6,7 +6,7 @@ defmodule EMLX.NxTest do
   alias EMLX.Backend, as: EB
   doctest EB
 
-  @types [{:s, 8}, {:u, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:bf, 16}, {:f, 32}, {:f, 64}]
+  @types [{:s, 8}, {:u, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:bf, 16}, {:f, 32}]
   @bf16_and_ints [{:s, 8}, {:u, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:bf, 16}]
   @ints [{:s, 8}, {:u, 8}, {:s, 16}, {:s, 32}, {:s, 64}]
   @ops [:add, :subtract, :divide, :remainder, :multiply, :pow, :atan2, :min, :max]

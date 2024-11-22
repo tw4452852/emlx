@@ -106,7 +106,21 @@ defmodule EMLX.Backend do
   defp nx_type_to_mlx({:s, 64}), do: :int64
   defp nx_type_to_mlx({:f, 16}), do: :float16
   defp nx_type_to_mlx({:f, 32}), do: :float32
-  defp nx_type_to_mlx(:bool), do: :bool
+  defp nx_type_to_mlx({:bf, 16}), do: :float32
+  defp nx_type_to_mlx(:bool), do: :bfloat16
+
+  defp mlx_type_to_nx(:uint8), do: {:u, 8}
+  defp mlx_type_to_nx(:uint16), do: {:u, 16}
+  defp mlx_type_to_nx(:uint32), do: {:u, 32}
+  defp mlx_type_to_nx(:uint64), do: {:u, 64}
+  defp mlx_type_to_nx(:int8), do: {:s, 8}
+  defp mlx_type_to_nx(:int16), do: {:s, 16}
+  defp mlx_type_to_nx(:int32), do: {:s, 32}
+  defp mlx_type_to_nx(:int64), do: {:s, 64}
+  defp mlx_type_to_nx(:float16), do: {:f, 16}
+  defp mlx_type_to_nx(:float32), do: {:f, 32}
+  defp mlx_type_to_nx(:bfloat16), do: {:bf, 16}
+  defp mlx_type_to_nx(:bool), do: :bool
 
   defp check_shape_and_type!(device_ref, expected_shape, expected_type) do
     actual_shape = EMLX.shape(device_ref)
@@ -149,18 +163,6 @@ defmodule EMLX.Backend do
 
     device_ref
   end
-
-  defp mlx_type_to_nx(:uint8), do: {:u, 8}
-  defp mlx_type_to_nx(:uint16), do: {:u, 16}
-  defp mlx_type_to_nx(:uint32), do: {:u, 32}
-  defp mlx_type_to_nx(:uint64), do: {:u, 64}
-  defp mlx_type_to_nx(:int8), do: {:s, 8}
-  defp mlx_type_to_nx(:int16), do: {:s, 16}
-  defp mlx_type_to_nx(:int32), do: {:s, 32}
-  defp mlx_type_to_nx(:int64), do: {:s, 64}
-  defp mlx_type_to_nx(:float16), do: {:f, 16}
-  defp mlx_type_to_nx(:float32), do: {:f, 32}
-  defp mlx_type_to_nx(:bool), do: :bool
 
   @impl true
   def constant(
