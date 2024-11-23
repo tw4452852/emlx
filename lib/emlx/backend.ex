@@ -78,7 +78,6 @@ defmodule EMLX.Backend do
   @impl true
   def from_binary(%T{type: type, shape: shape} = out, binary, backend_options) do
     binary
-    |> maybe_pad_binary(type)
     |> EMLX.from_blob(
       shape,
       to_mlx_type(type),
@@ -86,21 +85,6 @@ defmodule EMLX.Backend do
     )
     |> to_nx(out)
   end
-
-  defp maybe_pad_binary(bin, {:u, size}) when size in [16, 32] do
-    double_size = size * 2
-    for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-size(double_size)>>
-  end
-
-  defp maybe_pad_binary(bin, {:u, size}) when size in [2, 4] do
-    for <<x::native-size(size) <- bin>>, into: <<>>, do: <<x::native-8>>
-  end
-
-  defp maybe_pad_binary(bin, {:s, size}) when size in [2, 4] do
-    for <<x::native-signed-size(size) <- bin>>, into: <<>>, do: <<x::native-signed-8>>
-  end
-
-  defp maybe_pad_binary(bin, _), do: bin
 
   defp maybe_add_signature(result, %T{data: %Backend{ref: {device, ref}}}) do
     ~c"#Ref<" ++ rest = :erlang.ref_to_list(ref)
