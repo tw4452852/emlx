@@ -213,6 +213,7 @@ defmodule EMLX do
   deftensor cumulative_min(tensor, axis, reverse, inclusive)
   deftensor stack(tensors, axis)
   deftensor where(tensorPred, tensorTrue, tensorFalse)
+  deftensor concatenate(tensors, axis)
   deftensor take_along_axis(tensor, tensorIndices, axis)
 
   ## Dirty non-tensor return values

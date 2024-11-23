@@ -127,6 +127,10 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def concatenate(_tensors, _axis, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def take_along_axis(_tensor, _indices, _axis, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
