@@ -125,6 +125,7 @@ defmodule EMLX.Backend do
   defp to_mlx_type({:f, 16}), do: :float16
   defp to_mlx_type({:f, 32}), do: :float32
   defp to_mlx_type({:bf, 16}), do: :bfloat16
+  defp to_mlx_type({:c, 64}), do: :complex64
   defp to_mlx_type(:bool), do: :bool
 
   defp to_nx_type(:uint8), do: {:u, 8}
@@ -138,6 +139,7 @@ defmodule EMLX.Backend do
   defp to_nx_type(:float16), do: {:f, 16}
   defp to_nx_type(:float32), do: {:f, 32}
   defp to_nx_type(:bfloat16), do: {:bf, 16}
+  defp to_nx_type(:complex64), do: {:c, 64}
   defp to_nx_type(:bool), do: :bool
 
   defp check_shape_and_type!(device_ref, expected_shape, expected_type) do
@@ -397,7 +399,7 @@ defmodule EMLX.Backend do
 
   # Unary Ops
 
-  ops = [:abs, :ceil, :conjugate, :floor, :negate, :round, :sign, :real, :imag, :is_nan, :is_infinity, :logical_not] ++
+  ops = [:abs, :ceil, :conjugate, :floor, :negate, :round, :sign, :real, :imag, :is_nan, :is_infinity, :logical_not, :bitwise_not] ++
         [:sigmoid, :asin, :asinh, :acos, :acosh, :atan, :atanh, :cos, :cosh, :erf, :erf_inv, :exp, :expm1, :log, :log1p, :rsqrt, :sin, :sinh, :sqrt, :tan, :tanh]
 
   for op <- ops do
@@ -423,6 +425,16 @@ defmodule EMLX.Backend do
       |> EMLX.to_type(to_mlx_type(out.type))
       |> to_nx(out)
     end
+  end
+
+  @impl true
+  def all_close(out, a, b, opts) do
+    atol = opts[:atol] || 1.0e-4
+    rtol = opts[:rtol] || 1.0e-8
+    equal_nan = true
+
+    EMLX.allclose(from_nx(a), from_nx(b), atol, rtol, equal_nan)
+    |> to_nx(out)
   end
 
   defp bitmask({device, _} = tensor, {:u, 16}),

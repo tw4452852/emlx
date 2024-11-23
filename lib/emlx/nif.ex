@@ -283,6 +283,10 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def bitwise_not(_a, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def left_shift(_a, _b, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
@@ -336,6 +340,14 @@ defmodule EMLX.NIF do
   end
 
   def logical_xor(_a, _b, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def allclose(_a, _b, _atol, _rtol, _equal_nan, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def isclose(_a, _b, _atol, _rtol, _equal_nan, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 
