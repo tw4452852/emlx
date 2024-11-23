@@ -11,6 +11,10 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def slice_update(_tensor, _tensor_updates, _starts, _stops, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def squeeze(_tensor, _axes, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
@@ -123,15 +127,19 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def where(_condition, _on_true, _on_false, _device) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
-
   def concatenate(_tensors, _axis, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def where(_condition, _on_true, _on_false, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def take_along_axis(_tensor, _indices, _axis, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def take(_tensor, _indices, _axis, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
 

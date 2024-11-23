@@ -215,6 +215,7 @@ defmodule EMLX do
   deftensor where(tensorPred, tensorTrue, tensorFalse)
   deftensor concatenate(tensors, axis)
   deftensor take_along_axis(tensor, tensorIndices, axis)
+  deftensor take(tensor, tensorIndices, axis)
 
   ## Dirty non-tensor return values
   defvalue to_blob(tensor)
@@ -288,6 +289,7 @@ defmodule EMLX do
   end
 
   deftensor slice(tensor, starts, stops, strides)
+  deftensor slice_update(tensor, tensor_updates, starts, stops)
   deftensor squeeze(tensor, axes)
   defvalue item(tensor)
 
