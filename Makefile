@@ -1,6 +1,6 @@
 # Private configuration
 PRIV_DIR = $(MIX_APP_PATH)/priv
-BUILD_DIR = cache/emlx-$(EMLX_VERSION)/objs
+BUILD_DIR = cache/emlx-$(EMLX_VERSION)$(MLX_VARIANT)/objs
 EMLX_SO = $(PRIV_DIR)/libemlx.so
 EMLX_LIB_DIR = $(PRIV_DIR)/mlx/lib
 
@@ -36,7 +36,6 @@ $(BUILD_DIR)/%.o: c_src/%.cpp
 $(EMLX_SO): $(PRIV_DIR) $(OBJECTS)
 	@ echo "Copying MLX library to $(EMLX_LIB_DIR)"
 	@ mkdir -p $(EMLX_LIB_DIR)
-	@ echo "MIX_BUILD_EMBEDDED: $(MIX_BUILD_EMBEDDED)"
 	@ if [ "${MIX_BUILD_EMBEDDED}" = "true" ]; then \
 		cp -a $(MLX_LIB_DIR)/* $(EMLX_LIB_DIR) ; \
 	else \
