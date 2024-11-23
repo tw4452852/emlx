@@ -1,13 +1,15 @@
 defmodule EMLX.MixProject do
   use Mix.Project
 
+  @app :emlx
   @version "0.1.0"
+  @mlx_version "0.21.0"
 
   def project do
-    libmlx_dir = libmlx_config().dir
+    libmlx_config = libmlx_config()
 
     [
-      app: :emlx,
+      app: @app,
       version: @version,
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -16,8 +18,9 @@ defmodule EMLX.MixProject do
 
       # elixir_make
       make_env: %{
-        "MLX_INCLUDE_DIR" => Path.join(libmlx_dir, "include"),
-        "MLX_LIB_DIR" => Path.join(libmlx_dir, "lib"),
+        "MLX_INCLUDE_DIR" => Path.join(libmlx_config.dir, "include"),
+        "MLX_LIB_DIR" => Path.join(libmlx_config.dir, "lib"),
+        "MLX_VARIANT" => libmlx_config.variant,
         "EMLX_VERSION" => @version,
         "MIX_BUILD_EMBEDDED" => "#{Mix.Project.config()[:build_embedded]}"
       },
@@ -51,13 +54,36 @@ defmodule EMLX.MixProject do
   end
 
   defp libmlx_config() do
-    version = System.get_env("LIBMLX_VERSION", "0.21.0")
+    version = System.get_env("LIBMLX_VERSION", @mlx_version)
+    features = %{
+      jit?: to_boolean(System.get_env("LIBMLX_ENABLE_JIT")),
+      debug?: to_boolean(System.get_env("LIBMLX_ENABLE_DEBUG"))
+    }
+    variant = to_variant(features)
 
     %{
       version: version,
-      base: "libmlx",
-      dir: Path.join(__DIR__, "cache/libmlx-#{version}")
+      dir: Path.join(__DIR__, "cache/libmlx-#{version}#{variant}"),
+      variant: variant
     }
+  end
+
+  defp to_boolean(nil), do: false
+
+  defp to_boolean(var) when is_boolean(var) do
+    var
+  end
+
+  defp to_boolean(var) do
+    String.downcase(to_string(var)) in ["1", "true", "on", "yes", "y"]
+  end
+
+  defp to_variant(features) do
+    [(if features.debug?, do: "debug", else: nil), (if features.jit?, do: "jit", else: nil)]
+    |> Enum.filter(& &1 != nil)
+    |> Enum.sort()
+    |> Enum.map(& "-#{&1}")
+    |> Enum.join("")
   end
 
   defp download_and_unarchive(args) do
@@ -84,7 +110,7 @@ defmodule EMLX.MixProject do
 
   defp download_and_unarchive(cache_dir, libmlx_config) do
     File.mkdir_p!(cache_dir)
-    libmlx_archive = Path.join(cache_dir, "libmlx-#{libmlx_config.version}.tar.gz")
+    libmlx_archive = Path.join(cache_dir, "libmlx-#{libmlx_config.version}#{libmlx_config.variant}.tar.gz")
 
     unless File.exists?(libmlx_archive) do
       # Download libmlx
@@ -94,7 +120,7 @@ defmodule EMLX.MixProject do
       end
 
       url =
-        "https://github.com/cocoa-xu/mlx-build/releases/download/v#{libmlx_config.version}/mlx-arm64-apple-darwin.tar.gz"
+        "https://github.com/cocoa-xu/mlx-build/releases/download/v#{libmlx_config.version}/mlx-arm64-apple-darwin#{libmlx_config.variant}.tar.gz"
 
       sha256_url = "#{url}.sha256"
 
