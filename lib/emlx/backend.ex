@@ -393,6 +393,14 @@ defmodule EMLX.Backend do
   end
 
   @impl true
+  def concatenate(out, tensors, axis) do
+    tensors
+    |> Enum.map(&from_nx/1)
+    |> EMLX.concatenate(axis)
+    |> to_nx(out)
+  end
+
+  @impl true
   def take_along_axis(out, tensor, idx, axis) do
     tensor
     |> from_nx()

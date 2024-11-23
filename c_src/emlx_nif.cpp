@@ -422,6 +422,14 @@ NIF(where) {
   TENSOR(mlx::core::where(*condition, *x, *y, device));
 }
 
+NIF(concatenate) {
+  LIST_PARAM(0, std::vector<mlx::core::array>, arrays);
+  PARAM(1, int, axis);
+  DEVICE_PARAM(2, device);
+
+  TENSOR(mlx::core::concatenate(arrays, axis, device));
+}
+
 NIF(take_along_axis) {
   TENSOR_PARAM(0, t);
   TENSOR_PARAM(1, indices);
@@ -735,6 +743,7 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"eval", 1, eval},
                                  {"stack", 3, stack},
                                  {"where", 4, where},
+                                 {"concatenate", 3, concatenate},
                                  {"take_along_axis", 4, take_along_axis},
                                  {"slice", 5, slice},
                                  {"squeeze", 3, squeeze},
