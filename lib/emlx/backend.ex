@@ -427,6 +427,16 @@ defmodule EMLX.Backend do
     end
   end
 
+  @impl true
+  def all_close(out, a, b, opts) do
+    atol = opts[:atol] || 1.0e-4
+    rtol = opts[:rtol] || 1.0e-8
+    equal_nan = true
+
+    EMLX.allclose(from_nx(a), from_nx(b), atol, rtol, equal_nan)
+    |> to_nx(out)
+  end
+
   defp bitmask({device, _} = tensor, {:u, 16}),
     do: EMLX.bitwise_and(tensor, EMLX.scalar_tensor(0xFFFF, :int, device))
 

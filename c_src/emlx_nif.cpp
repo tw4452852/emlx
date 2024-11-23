@@ -630,6 +630,26 @@ NIF(logical_xor) {
   auto t2 = mlx::core::logical_not(mlx::core::logical_and(*a, *b, device), device);
   TENSOR(mlx::core::logical_and(t1, t2, device));
 }
+NIF(allclose) {
+  TENSOR_PARAM(0, a);
+  TENSOR_PARAM(1, b);
+  PARAM(2, double, rtol);
+  PARAM(3, double, atol);
+  PARAM(4, bool, equal_nan);
+  DEVICE_PARAM(5, device);
+
+  TENSOR(mlx::core::allclose(*a, *b, rtol, atol, equal_nan, device));
+}
+NIF(isclose) {
+  TENSOR_PARAM(0, a);
+  TENSOR_PARAM(1, b);
+  PARAM(2, double, rtol);
+  PARAM(3, double, atol);
+  PARAM(4, bool, equal_nan);
+  DEVICE_PARAM(5, device);
+
+  TENSOR(mlx::core::isclose(*a, *b, rtol, atol, equal_nan, device));
+}
 
 static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"stack", 3, stack},
@@ -699,6 +719,7 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"bitwise_and", 3, bitwise_and},
                                  {"bitwise_or", 3, bitwise_or},
                                  {"bitwise_xor", 3, bitwise_xor},
+                                 {"bitwise_not", 2, bitwise_not},
                                  {"left_shift", 3, left_shift},
                                  {"right_shift", 3, right_shift},
                                  {"min", 3, min},
@@ -713,6 +734,8 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"logical_and", 3, logical_and},
                                  {"logical_or", 3, logical_or},
                                  {"logical_xor", 3, logical_xor},
+                                 {"allclose", 6, allclose},
+                                 {"isclose", 6, isclose},
                                  {"deallocate", 1, deallocate}};
 
 // Update the NIF initialization

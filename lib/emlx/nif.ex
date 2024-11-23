@@ -343,6 +343,14 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def allclose(_a, _b, _atol, _rtol, _equal_nan, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def isclose(_a, _b, _atol, _rtol, _equal_nan, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def deallocate(_ref) do
     :erlang.nif_error(:nif_not_loaded)
   end

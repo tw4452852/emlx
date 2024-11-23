@@ -152,6 +152,8 @@ defmodule EMLX do
   deftensor logical_and(tensorA, tensorB)
   deftensor logical_or(tensorA, tensorB)
   deftensor logical_xor(tensorA, tensorB)
+  deftensor allclose(tensorA, tensorB, rtol, atol, equal_nan)
+  deftensor isclose(tensorA, tensorB, rtol, atol, equal_nan)
   def tensordot(tensorA, tensorB, axesA, axesB),
     do: tensordot(tensorA, tensorB, axesA, [], axesB, [])
 
