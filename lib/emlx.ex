@@ -152,6 +152,12 @@ defmodule EMLX do
   deftensor logical_and(tensorA, tensorB)
   deftensor logical_or(tensorA, tensorB)
   deftensor logical_xor(tensorA, tensorB)
+
+  deftensor fft(tensor, n, axis)
+  deftensor ifft(tensor, n, axis)
+  deftensor fft2(tensor, s, axes)
+  deftensor ifft2(tensor, s, axes)
+
   deftensor allclose(tensorA, tensorB, rtol, atol, equal_nan)
   deftensor isclose(tensorA, tensorB, rtol, atol, equal_nan)
 

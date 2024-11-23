@@ -363,6 +363,22 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def fft(_a, _n, _axis, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def ifft(_a, _n, _axis, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def fft2(_a, _s, _axes, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
+  def ifft2(_a, _s, _axes, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def allclose(_a, _b, _atol, _rtol, _equal_nan, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
