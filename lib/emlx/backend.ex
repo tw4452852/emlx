@@ -125,6 +125,7 @@ defmodule EMLX.Backend do
   defp to_mlx_type({:f, 16}), do: :float16
   defp to_mlx_type({:f, 32}), do: :float32
   defp to_mlx_type({:bf, 16}), do: :bfloat16
+  defp to_mlx_type({:c, 64}), do: :complex64
   defp to_mlx_type(:bool), do: :bool
 
   defp to_nx_type(:uint8), do: {:u, 8}
@@ -138,6 +139,7 @@ defmodule EMLX.Backend do
   defp to_nx_type(:float16), do: {:f, 16}
   defp to_nx_type(:float32), do: {:f, 32}
   defp to_nx_type(:bfloat16), do: {:bf, 16}
+  defp to_nx_type(:complex64), do: {:c, 64}
   defp to_nx_type(:bool), do: :bool
 
   defp check_shape_and_type!(device_ref, expected_shape, expected_type) do
