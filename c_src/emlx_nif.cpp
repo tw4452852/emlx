@@ -603,6 +603,14 @@ BINARY_OP2(quotient, floor_divide)
 BINARY_OP(bitwise_and)
 BINARY_OP(bitwise_or)
 BINARY_OP(bitwise_xor)
+NIF(bitwise_not) {
+  TENSOR_PARAM(0, a);
+  DEVICE_PARAM(1, device);
+
+  auto dtype = (*a).dtype();
+  auto mask = mlx::core::full({1}, 0xFFFFFFFFFFFFFFFF, dtype, device);
+  TENSOR(mlx::core::subtract(mask, *a, device));
+}
 BINARY_OP(left_shift)
 BINARY_OP(right_shift)
 BINARY_OP(equal)

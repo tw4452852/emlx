@@ -137,6 +137,7 @@ defmodule EMLX do
   deftensor bitwise_and(tensorA, tensorB)
   deftensor bitwise_or(tensorA, tensorB)
   deftensor bitwise_xor(tensorA, tensorB)
+  deftensor bitwise_not(tensor)
   deftensor left_shift(tensorA, tensorB)
   deftensor right_shift(tensorA, tensorB)
   deftensor min(tensorA, tensorB)

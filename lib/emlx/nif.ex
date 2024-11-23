@@ -283,6 +283,10 @@ defmodule EMLX.NIF do
     :erlang.nif_error(:nif_not_loaded)
   end
 
+  def bitwise_not(_a, _device) do
+    :erlang.nif_error(:nif_not_loaded)
+  end
+
   def left_shift(_a, _b, _device) do
     :erlang.nif_error(:nif_not_loaded)
   end
