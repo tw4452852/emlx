@@ -391,6 +391,12 @@ NIF(tensordot) {
   TENSOR(mlx::core::tensordot(*a, *b, axes1, axes2, device));
 }
 
+NIF(eval) {
+  TENSOR_PARAM(0, t);
+  mlx::core::eval(*t);
+  return nx::nif::ok(env);
+}
+
 NIF(stack) {
   LIST_PARAM(0, std::vector<mlx::core::array>, arrays);
   PARAM(1, int, axis);
@@ -652,6 +658,7 @@ NIF(isclose) {
 }
 
 static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
+                                 {"eval", 1, eval},
                                  {"stack", 3, stack},
                                  {"where", 4, where},
                                  {"take_along_axis", 4, take_along_axis},

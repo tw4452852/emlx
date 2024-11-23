@@ -274,4 +274,51 @@ defmodule EMLX do
   def deallocate(tensor_ref) do
     NIF.deallocate(tensor_ref)
   end
+
+  def eval(tensor) do
+    NIF.eval(tensor)
+  end
+
+  @behaviour Nx.Defn.Compiler
+
+  @impl Nx.Defn.Compiler
+  def __jit__(key, vars, fun, args_list, opts) do
+    # TODO: instead of checking the backend here,
+    # we should automatically convert from binary backend to EMLX backend
+    # given a device optionsg
+    case Nx.default_backend() do
+       EMLX.Backend -> :ok
+       {EMLX.Backend, _} -> :ok
+       other ->
+         raise ArgumentError, "EMLX can only be used with the EMLX backend, got: #{inspect(other)}"
+    end
+
+    fun = __compile__(key, vars, fun, opts)
+
+    [result] = fun.(args_list)
+
+
+    Nx.Defn.Composite.traverse(result, fn
+      %Nx.Tensor{data: %EMLX.Backend{ref: {_device, ref}}} = node ->
+        :ok = eval(ref)
+        node
+
+      other ->
+        other
+    end)
+
+    [result]
+  end
+
+  @impl Nx.Defn.Compiler
+  defdelegate __compile__(key, vars, fun, opts), to: Nx.Defn.Evaluator
+
+  @impl Nx.Defn.Compiler
+  defdelegate __partitions_options__(opts), to: Nx.Defn.Evaluator
+
+  @impl Nx.Defn.Compiler
+  def __to_backend__(opts) do
+    device = Keyword.get(opts, :device, :gpu)
+    {EMLX.Backend, device: device}
+  end
 end
