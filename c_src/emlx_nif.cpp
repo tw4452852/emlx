@@ -699,6 +699,38 @@ NIF(squeeze) {
   TENSOR(mlx::core::squeeze(*t, axes, device));
 }
 
+NIF(emlx_fft) {
+  TENSOR_PARAM(0, t);
+  PARAM(1, int, n);
+  PARAM(2, int, axis);
+  DEVICE_PARAM(3, device);
+  TENSOR(mlx::core::fft::fft(*t, n, axis, device));
+}
+
+NIF(ifft) {
+  TENSOR_PARAM(0, t);
+  PARAM(1, int, n);
+  PARAM(2, int, axis);
+  DEVICE_PARAM(3, device);
+  TENSOR(mlx::core::fft::ifft(*t, n, axis, device));
+}
+
+NIF(emlx_fft2) {
+  TENSOR_PARAM(0, t);
+  LIST_PARAM(1, std::vector<int>, n);
+  LIST_PARAM(2, std::vector<int>, axes);
+  DEVICE_PARAM(3, device);
+  TENSOR(mlx::core::fft::fft2(*t, n, axes, device));
+}
+
+NIF(ifft2) {
+  TENSOR_PARAM(0, t);
+  LIST_PARAM(1, std::vector<int>, n);
+  LIST_PARAM(2, std::vector<int>, axes);
+  DEVICE_PARAM(3, device);
+  TENSOR(mlx::core::fft::ifft2(*t, n, axes, device));
+}
+
 static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"eval", 1, eval},
                                  {"stack", 3, stack},
@@ -787,6 +819,10 @@ static ErlNifFunc nif_funcs[] = {{"scalar_type", 1, scalar_type},
                                  {"logical_and", 3, logical_and},
                                  {"logical_or", 3, logical_or},
                                  {"logical_xor", 3, logical_xor},
+                                 {"fft", 4, emlx_fft},
+                                 {"ifft", 4, ifft},
+                                 {"fft2", 4, emlx_fft2},
+                                 {"ifft2", 4, ifft2},
                                  {"allclose", 6, allclose},
                                  {"isclose", 6, isclose},
                                  {"deallocate", 1, deallocate}};
