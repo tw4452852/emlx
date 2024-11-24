@@ -125,6 +125,7 @@ defmodule EMLX do
   deftensor reshape(tensor, shape)
   deftensor broadcast_to(tensor, shape)
   deftensor to_type(tensor, type)
+  deftensor view(tensor, type)
 
   ## Binary ops
   deftensor add(tensorA, tensorB)
@@ -140,8 +141,8 @@ defmodule EMLX do
   deftensor bitwise_not(tensor)
   deftensor left_shift(tensorA, tensorB)
   deftensor right_shift(tensorA, tensorB)
-  deftensor min(tensorA, tensorB)
-  deftensor max(tensorA, tensorB)
+  deftensor minimum(tensorA, tensorB)
+  deftensor maximum(tensorA, tensorB)
   deftensor quotient(tensorA, tensorB)
   deftensor equal(tensorA, tensorB)
   deftensor not_equal(tensorA, tensorB)
@@ -216,6 +217,8 @@ defmodule EMLX do
   deftensor concatenate(tensors, axis)
   deftensor take_along_axis(tensor, tensorIndices, axis)
   deftensor take(tensor, tensorIndices, axis)
+  deftensor max(tensor, axes, keep_axes)
+  deftensor min(tensor, axes, keep_axes)
 
   ## Dirty non-tensor return values
   defvalue to_blob(tensor)
