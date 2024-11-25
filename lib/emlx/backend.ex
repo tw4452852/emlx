@@ -980,6 +980,10 @@ defmodule EMLX.Backend do
     end
   end
 
+  def lu(_out, _tensor, _opts) do
+    raise "Nx.LinAlg.lu not supported yet in EMLX"
+  end
+
   # Helper function to handle different scalar types
   defp constant_serialize_scalar(scalar) when is_number(scalar), do: scalar
   defp constant_serialize_scalar(%Complex{} = c), do: Complex.abs(c)
