@@ -972,7 +972,13 @@ defmodule EMLX.Backend do
     end)
   end
 
-  for {op, arity} <- [reduce: 5, window_reduce: 6, population_count: 2, count_leading_zeros: 2] do
+  for {op, arity} <- [
+        reduce: 5,
+        window_reduce: 6,
+        population_count: 2,
+        count_leading_zeros: 2,
+        triangular_solve: 4
+      ] do
     args = List.duplicate(:_, arity)
     @impl true
     def unquote(op)(unquote_splicing(args)) do
@@ -980,6 +986,7 @@ defmodule EMLX.Backend do
     end
   end
 
+  @impl true
   def lu(_out, _tensor, _opts) do
     raise "Nx.LinAlg.lu not supported yet in EMLX"
   end
