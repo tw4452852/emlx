@@ -429,6 +429,17 @@ NIF(transpose) {
   TENSOR(mlx::core::transpose(*t, axes, device));
 }
 
+NIF(pad) {
+  TENSOR_PARAM(0, t);
+  LIST_PARAM(1, std::vector<int>, axes);
+  LIST_PARAM(2, std::vector<int>, low_pad_size);
+  LIST_PARAM(3, std::vector<int>, high_pad_size);
+  TENSOR_PARAM(4, pad_value);
+  DEVICE_PARAM(5, device);
+
+  TENSOR(mlx::core::pad(*t, axes, low_pad_size, high_pad_size, *pad_value, "constant", device))
+};
+
 NIF(sort) {
   TENSOR_PARAM(0, t);
   PARAM(1, int, axis);
@@ -898,6 +909,7 @@ static ErlNifFunc nif_funcs[] = {{"strides", 1, strides},
                                  {"einsum", 4, einsum},
                                  {"conv_general", 9, conv_general},
                                  {"transpose", 3, transpose},
+                                 {"pad", 6, pad},
                                  {"sort", 3, sort},
                                  {"argsort", 3, argsort},
                                  {"abs", 2, abs},
