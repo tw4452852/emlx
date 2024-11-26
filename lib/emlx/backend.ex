@@ -791,23 +791,23 @@ defmodule EMLX.Backend do
 
   @impl true
   def fft2(out, tensor, opts) do
-    length = opts[:length]
+    lengths = opts[:lengths]
     axes = opts[:axes] || [-2, -1]
 
     tensor
     |> from_nx()
-    |> EMLX.fft2(length, axes)
+    |> EMLX.fft2(lengths, axes)
     |> to_nx(out)
   end
 
   @impl true
   def ifft2(out, tensor, opts) do
-    length = opts[:length]
+    lengths = opts[:lengths]
     axes = opts[:axes] || [-2, -1]
 
     tensor
     |> from_nx()
-    |> EMLX.ifft2(length, axes)
+    |> EMLX.ifft2(lengths, axes)
     |> to_nx(out)
   end
 
@@ -1044,7 +1044,7 @@ defmodule EMLX.Backend do
 
   for op <- [:sum, :product, :max, :min] do
     @impl true
-    def unquote(:"window_#{op}")(out, tensor, window_shape, opts) do
+    def unquote(:"window_#{op}")(out, tensor, window_shape, _opts) do
       # TODO: add strides and dilations
       tensor_rank = tuple_size(tensor.shape)
 
@@ -1123,9 +1123,22 @@ defmodule EMLX.Backend do
     end
   end
 
-  @impl true
-  def lu(_out, _tensor, _opts) do
-    raise "Nx.LinAlg.lu not supported yet in EMLX"
+  for {op, arity} <- [
+        lu: 3,
+        window_scatter_max: 6,
+        window_scatter_min: 6,
+        to_pointer: 2,
+        indexed_put: 5,
+        indexed_add: 5,
+        gather: 4,
+        from_pointer: 5
+      ] do
+    @impl true
+    args = List.duplicate(Macro.var(:_, __MODULE__), arity)
+
+    def unquote(op)(unquote_splicing(args)) do
+      raise "Nx.Backend.#{unquote(op)}/#{unquote(arity)} not implemented yet in EMLX"
+    end
   end
 
   # Helper function to handle different scalar types
