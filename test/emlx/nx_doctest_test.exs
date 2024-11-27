@@ -7,17 +7,12 @@ defmodule EMLX.Nx.DoctestTest do
   end
 
   @not_implemented_yet [
-    pad: 3,
-    conv: 3,
-    # dot does not support integer types
-    dot: 2,
-    dot: 4,
-    dot: 6,
+    # not supported yet
     window_scatter_min: 5,
+    # not supported yet
     window_scatter_max: 5,
-    reverse: 2,
-    slice: 4,
-    reflect: 2
+    # not supported yet
+    reverse: 2
   ]
 
   @rounding_error [
@@ -32,29 +27,24 @@ defmodule EMLX.Nx.DoctestTest do
     cos: 1,
     standard_deviation: 2,
     cosh: 1,
-    log10: 1
+    log10: 1,
+    acos: 1,
+    covariance: 3
   ]
 
   @to_be_fixed [
     :moduledoc,
-    real: 1,
-    imag: 1,
-    acosh: 1,
-    acos: 1,
-    phase: 1,
-    remainder: 2,
-    complex: 2,
-    is_infinity: 1,
+    # window_* do not support window_dilations yet
     window_sum: 3,
     window_max: 3,
     window_min: 3,
     window_product: 3,
     window_mean: 3,
-    all_close: 3,
-    conjugate: 1,
-    bitwise_not: 1,
-    clip: 3,
-    covariance: 3
+    # integer types not supported, and complex types not supported
+    # complex can use the definition Torchx uses
+    conv: 3,
+    # missing support for inner padding
+    pad: 3
   ]
 
   @not_supported [
