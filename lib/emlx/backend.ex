@@ -272,8 +272,12 @@ defmodule EMLX.Backend do
     {axes, low_pad_size, high_pad_size} =
       input_config
       |> Enum.with_index()
-      |> Enum.reduce({[], [], []}, fn {{low, high, _}, i}, {axes, lows, highs} ->
-        {[i | axes], [max(low, 0) | lows], [max(high, 0) | highs]}
+      |> Enum.reduce({[], [], []}, fn
+        {{low, high, 0}, i}, {axes, lows, highs} ->
+          {[i | axes], [max(low, 0) | lows], [max(high, 0) | highs]}
+
+        _, _ ->
+          raise "Interior padding not supported in EMLX yet"
       end)
 
     pad_value =
