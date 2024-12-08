@@ -6,11 +6,6 @@ defmodule EMLX.Nx.DoctestTest do
     :ok
   end
 
-  @not_implemented_yet [
-    # not supported yet
-    reverse: 2
-  ]
-
   @rounding_error [
     erfc: 1,
     expm1: 1,
@@ -59,5 +54,5 @@ defmodule EMLX.Nx.DoctestTest do
     sort: 2
   ]
 
-  doctest Nx, except: @not_implemented_yet ++ @rounding_error ++ @not_supported ++ @to_be_fixed
+  doctest Nx, except: @rounding_error ++ @not_supported ++ @to_be_fixed
 end
