@@ -331,8 +331,6 @@ defmodule EMLX do
         raise ArgumentError, "EMLX can only be used with the EMLX backend, got: #{inspect(other)}"
     end
 
-    Nx.Defn.debug_expr(fun).(vars) |> dbg()
-
     fun = __compile__(key, vars, fun, opts)
 
     [result] = fun.(args_list)
