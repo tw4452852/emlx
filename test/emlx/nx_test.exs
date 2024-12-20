@@ -855,6 +855,13 @@ defmodule EMLX.NxTest do
         ])
       )
     end
+
+    test "negative paddings" do
+      t = Nx.tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+
+      assert_equal(Nx.pad(t, 0, [{-1, -1, 0}, {0, 0, 0}]), Nx.tensor([[5, 6, 7, 8]]))
+      assert_equal(Nx.pad(t, 0, [{0, 0, 0}, {-1, -1, 0}]), Nx.tensor([[2, 3], [6, 7], [10, 11]]))
+    end
   end
 
   describe "conv" do
