@@ -80,6 +80,7 @@ $(MLX_SO): $(MLX_SRC_DIR)
 			-D MLX_METAL_DEBUG=$(LIBMLX_ENABLE_DEBUG) \
 			-D MLX_METAL_JIT=$(LIBMLX_ENABLE_JIT) \
 			-D BUILD_SHARED_LIBS=ON \
+			-D MLX_ENABLE_X64_MAC=ON \
 			. && \
 		cmake --build "$(MLX_BUILD_DIR)" --config "$(CMAKE_BUILD_TYPE)" -j$(MAKE_JOBS) && \
 		cmake --install "$(MLX_BUILD_DIR)" --config "$(CMAKE_BUILD_TYPE)" ; \
